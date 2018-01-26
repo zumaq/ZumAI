@@ -1,4 +1,5 @@
 //AIInfo has all the info for AI that the game needs.
+//This is the most Emotional AI can get.  
 class ZumAI extends AIInfo {
   function GetAuthor()      { return "Newbie AI Writer"; }
   function GetName()        { return "ZumAI"; }
