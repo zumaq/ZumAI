@@ -1,4 +1,3 @@
-//AIInfo has all the info for AI that the game needs.
 class ZumAI extends AIInfo {
   function GetAuthor()      { return "Newbie AI Writer"; }
   function GetName()        { return "ZumAI"; }
