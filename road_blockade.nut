@@ -24,6 +24,13 @@ class RoadBlockade
 	*/
 	function BuildTrain(depoTile);
 	
+    /**
+    * @brief IsBlockadeOnPath, finds and returns tile if there is a blockade on given path
+    * if not return false.
+    * @param path, the path you want to check
+    */
+    function IsBlockadeOnPath(path);
+
 	/**
 	* @brief GetAroundBlockade, calls functions to get around the blockade.
 	* @param startTile, starting tile
@@ -95,6 +102,26 @@ class RoadBlockade
 		return true;
 	}
 	
+    function RoadBlockade::IsBlockadeOnPath(path) {
+        if (path == null) {
+            AILog.Error("path is null");
+            return false;
+        }
+        while (path != null) {
+            local par = path.GetParent();
+            if (par != null) {
+                if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1 ) {
+                    if (AIRoad.IsRoadTile(par.GetTile()) && AIRail.IsRailTile(par.GetTile())) {
+                        //TODO: punish with wehicles rather than by the tile that it is there, cuz you can punish yourselve.
+                        AILog.Info("Road is and intersection, punish the creator" + AITile.GetOwner(path.GetTile()));
+                        return par.GetTile();
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 	function RoadBlockade::GetAroundBlockade(startTile, endTile){
 		local path = RoadBlockade.FindBestPath(startTile, endTile);
 		RoadBlockade.BuildRoad(path);
