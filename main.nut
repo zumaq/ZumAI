@@ -12,6 +12,7 @@ class ZumAI extends AIController
   lastTile = null;
   vehicle = array(6);
   train = null;
+  _path = null;
   
   constructor()
   {
@@ -28,15 +29,17 @@ function ZumAI::Start()
       i = i + 1;
     }
   }
+  
   findAndBuildRoad();
   BuildVehicles(3);
   while (true) {
     if(this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
     if(this.GetTick() % 500 == 0) _players.printPoints();
-	if(this.GetTick() % 1500 == 0) VehicleTurnAround(3);
+	//if(this.GetTick() % 1500 == 0) VehicleTurnAround(3);
+	//if(this.GetTick() % 5000 == 0) RoadBlockade.IsBlockadeOnPath(_path);
 	this.Sleep(1);
   
-	  while (AIEventController.IsEventWaiting()) {
+	while (AIEventController.IsEventWaiting()) {
 	  local e = AIEventController.GetNextEvent();
 	  switch (e.GetEventType()) {
 		case AIEvent.ET_VEHICLE_CRASHED:
@@ -52,7 +55,12 @@ function ZumAI::Start()
 		  AILog.Info("We have a new company, id: (" + c + ")");
 		  break;
 		}
-	  }  
+	}
+
+	//AILog.Warning(AIError.GetLastErrorString());
+	if(AIError.GetLastError() == AIError.ERR_VEHICLE_IN_THE_WAY){
+		AILog.Info("Vehicle in the way!!");
+	}
   }
 }
 
@@ -89,7 +97,9 @@ function findAndBuildRoad(){
     path = pathfinder.FindPath(100);
     this.Sleep(1);
   }
-
+  
+  _path = path;
+  
   if (path == null) {
     /* No path was found. */
     AILog.Error("pathfinder.FindPath return null");
@@ -99,7 +109,7 @@ function findAndBuildRoad(){
   local firstTileNext = path.GetParent().GetTile();
   lastTile = null;
   local lastTileNext = null;
-  local first = 0;
+  local first = 1;
   local depoBuilt = 0;
   local i=0;
   
@@ -130,11 +140,12 @@ function findAndBuildRoad(){
         if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
           AILog.Info("Problem, cant build road, maybe it is built.");
         }
-		if (AIRoad.IsRoadTile(par.GetTile()) && AIRail.IsRailTile(par.GetTile())){
+		if (AIRail.IsLevelCrossingTile(par.GetTile())){
 		  if (!first){
 		    RoadBlockade.BuildRoadBlockade(par.GetParent().GetTile(), 1);
 			first = 1;
 		  }else{
+		  AILog.Warning("Who did the blockade: " + RoadBlockade.WhoDidTheBlockade(par.GetTile(),0));
 		  AILog.Info("We cant build here, its a road and rail tile. PUNISH!!! ownerid: " + AITile.GetOwner(path.GetTile()));
 		  _players.addKarmaPoints(AITile.GetOwner(path.GetTile()),-20);
 		  local endTile = par.GetParent();
