@@ -1,0 +1,72 @@
+/**
+ * @author Michal Zopp
+ * @file road_blockades.nut
+ */
+
+ /**
+  * @brief class Road Blockades
+  */
+class RoadBlockade
+{
+	constructor(){
+	}
+	
+	function BuildRoadBlockade(blockadeTile){
+	
+	return true;
+	}
+	
+	function GetAroundBlockade(startTile, endTile){
+		AILog.Info("Building workaround with road");
+		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+		local pathfinder = RoadPathFinder();
+		pathfinder.cost.tile=0;
+		pathfinder.cost.no_existing_road=3;
+		pathfinder.cost.turn=1;
+		
+		pathfinder.InitializePath([startTile], [endTile]);
+		  local path = false;
+		  while (path == false) {
+			path = pathfinder.FindPath(50);
+			this.Sleep(1);
+		  }
+
+		  if (path == null) {
+			AILog.Error("pathfinder.FindPath return null");
+			return false;
+		  }
+		
+		lastTile = null;
+		local lastTileNext = null;
+	  
+		/* If a path was found, build a road over it. */
+		while (path != null) {
+		local par = path.GetParent();
+		
+		if (par != null) {
+		  lastTile = path.GetTile();
+			if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
+			  AILog.Info("Problem, cant build road, maybe it is built.");
+			}
+		}
+		lastTileNext = path.GetTile();
+		path = par;
+	  }
+	}
+	
+	function BuildBridge(startTile, endTile){
+	
+	}
+	
+	function BuildTunnel(startTile, endTile){
+	
+	}
+	
+	function BuildRoad(startTile, endTile){
+	
+	}
+	
+	function FindBestPath(startTile, endTile){
+	
+	}
+}

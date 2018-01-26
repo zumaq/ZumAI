@@ -1,0 +1,92 @@
+/**
+ * @author Michal Zopp
+ * @file road_blockades.nut
+ */
+
+ /**
+  * @brief class Road Blockades
+  */
+class RoadBlockade
+{
+	constructor(){
+	}
+	
+	function BuildTrain(depoTile){
+		local vl = AIVehicleList();
+		vl.Valuate(AIVehicle.GetVehicleType);
+		vl.KeepValue(AIVehicle.VT_RAIL);
+		local locomotive_engine = vl.Begin();
+		
+		locomotive = AIVehicle.BuildVehicle(depo, locomotive_engine);
+		AIVehicle.StartStopVehicle(locomotive);
+		return true;
+	}
+	
+	function BuildRoadBlockade(buildTile, roadDircetion){
+		AIRail.SetCurrentRailType(AIRailTypeList().Begin());
+		
+		//1 is S to N, 0 is W to E
+		if(roadDirection){
+			AIRail.BuildRailTrack(buildTile, AIRail.RAILTRACK_NW_SE);
+			AIRail.BuildRailDepot(buildTile - AIMap.GetTileIndex(1,0), buildTile)
+		}else{
+			AIRail.BuildRailTrack(buildTile , AIRail.RAILTRACK_NE_SW);
+			AIRail.BuildRailDepot(buildTile - AIMap.GetTileIndex(0,1), buildTile)
+		}
+		return BuildTrain(buildTile);
+	}
+	
+	function GetAroundBlockade(startTile, endTile){
+		AILog.Info("Building workaround with road");
+		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+		local pathfinder = RoadPathFinder();
+		pathfinder.cost.tile=1;
+		pathfinder.cost.no_existing_road=-10;
+		pathfinder.cost.turn=1;
+		
+		pathfinder.InitializePath([startTile], [endTile]);
+		  local path = false;
+		  while (path == false) {
+			path = pathfinder.FindPath(50);
+			this.Sleep(1);
+		  }
+
+		  if (path == null) {
+			AILog.Error("pathfinder.FindPath return null");
+			return false;
+		  }
+		
+		lastTile = null;
+		local lastTileNext = null;
+	  
+		/* If a path was found, build a road over it. */
+		while (path != null) {
+		local par = path.GetParent();
+		
+		if (par != null) {
+		  lastTile = path.GetTile();
+			if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
+			  AILog.Info("Problem, cant build road, maybe it is built.");
+			}
+		}
+		lastTileNext = path.GetTile();
+		path = par;
+	  }
+	}
+	
+	function BuildBridge(startTile, endTile){
+	
+	}
+	
+	function BuildTunnel(startTile, endTile){
+	
+	}
+	
+	function BuildRoad(startTile, endTile){
+	
+	}
+	
+	function FindBestPath(startTile, endTile){
+	
+	}
+}

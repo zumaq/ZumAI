@@ -1,0 +1,33 @@
+import("pathfinder.road", "RoadPathFinder", 3);
+
+class ZumAI extends AIController 
+{
+  function Start();
+}
+
+function ZumAI::Start()
+{
+  if (!AICompany.SetName("ZumAI")) {
+    local i = 2;
+    while (!AICompany.SetName("ZumAI #" + i)) {
+      i = i + 1;
+    }
+  }
+  while (true) {
+    AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
+    this.Sleep(1);
+	
+  while (AIEventController.IsEventWaiting()) {
+  local e = AIEventController.GetNextEvent();
+  switch (e.GetEventType()) {
+    case AIEvent.AI_ET_VEHICLE_CRASHED:
+      local ec = AIEventVehicleCrashed.Convert(e);
+      local v  = ec.GetVehicleID();
+      AILog.Info("We have a crashed vehicle (" + v + ")");
+      /* Handle the crashed vehicle */
+      break;
+    }
+  }
+  
+  }
+}

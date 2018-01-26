@@ -1,0 +1,12 @@
+/**
+ * @author Michal Zopp
+ * @file road_blockades.nut
+ */
+
+ /**
+  * @brief class Road Blockades
+  */
+class RoadBlockade
+{
+
+}

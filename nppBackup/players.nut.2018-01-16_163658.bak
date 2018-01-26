@@ -1,0 +1,12 @@
+/**
+ * @author Michal Zopp
+ * @file players.nut
+ */
+
+ /**
+  * @brief class Rail Route manages all route vehicle functions 
+  */
+class Players
+{
+	static MAX_PLAYERS = 15; //the maximum that allows to join on one server
+}

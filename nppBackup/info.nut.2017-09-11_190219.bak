@@ -1,0 +1,14 @@
+class ZumAI extends AIInfo {
+  function GetAuthor() 		{return "Michal Zopp";}
+  function GetName() 		{return "ZumAI";}
+  function GetDescription() {return "my first AI";}
+  function GetVersion() 	{return 1;}
+  function GetDate() 		{return "2017-05-28";}
+  function CreateInstance() {return "ZumAI";}
+  function GetShortName() 	{return "Zum";}
+  function GetAPIVersion() 	{return "1.0";}
+}
+
+RegisterAI(ZumAI());
+
+

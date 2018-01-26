@@ -1,0 +1,27 @@
+/**
+ * @author Michal Zopp
+ * @file players.nut
+ */
+
+ /**
+  * @brief class Rail Route manages all route vehicle functions 
+  */
+class Players
+{
+	static MAX_PLAYERS = 15; /* The maximum that allows to join on one server */
+	static MAX_KARMA_POINTS = 200; /* Maximum points you can have*/
+	static DEFAULT_KARMA_POINTS = 100; /* Default poins for karma */
+	static MIN_KARMA_POINTS = 0; /* Minimum points you can have*/
+	
+	_karma_points = array(0);
+	
+	constructor(){
+		for(local i = 0; i < MAX_PLAYERS; ++i) {
+			_karma_points.push(DEFAULT_KARMA_POINTS);
+		}
+	}
+	
+	function addKarmaPoints(int PlayerID){
+		
+	}
+}

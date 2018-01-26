@@ -1,0 +1,34 @@
+/**
+ * @author Michal Zopp
+ * @file road_blockades.nut
+ */
+
+ /**
+  * @brief class Road Blockades
+  */
+class RoadBlockade
+{
+	constructor(){
+	}
+	
+	function BuildRoadBlockade(blockadeTile){
+	
+	return true;
+	}
+	
+	function GetAroundBlockade(startTile, endTile){
+	
+	}
+	
+	function BuildBridge(startTile, endTile){
+	
+	}
+	
+	function BuildTunnel(startTile, endTile){
+	
+	}
+	
+	function FindBestPath(startTile, endTile){
+	
+	}
+}
