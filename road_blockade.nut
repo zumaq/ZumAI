@@ -42,7 +42,7 @@ class RoadBlockade
 	function WhoDidTheBlockade(tile, roadDirection);
 	
     /**
-    * @brief IsBlockadeOnPath, finds and returns tile if there is a blockade on given path
+    * @brief IsBlockadeOnPath, finds and returns tiles if there is a blockade on given path
     * if not return false.
     * @param path, the path you want to check
     */
@@ -54,6 +54,13 @@ class RoadBlockade
 	* @param endTile, ending tile
 	*/
 	function GetAroundBlockade(startTile, endTile);
+	
+	/**
+	* @brief TurnAroundVehicles, this forces all the vehicles in param to turn around
+	* and get over the potential blockade.
+	* @param vehicles, list of vehicles you want to turn around
+	*/
+	function TurnAroundVehicles(vehicles);
 	
 	/**
 	* @brief BuildBridge
@@ -160,6 +167,7 @@ function RoadBlockade::IsBlockadeOnPath(path) {
 		AILog.Error("path is null");
 		return false;
 	}
+	local blockedTiles = array(0);
 	while (path != null) {
 		local par = path.GetParent();
 		if (par != null) {
@@ -167,17 +175,29 @@ function RoadBlockade::IsBlockadeOnPath(path) {
 				if (AIRail.IsLevelCrossingTile(par.GetTile())) {
 					//TODO: punish with vehicles rather than by the tile that it is there, cuz you can punish yourselve.
 					AILog.Info("Road is and intersection, punish the creator" + AITile.GetOwner(path.GetTile()));
-					return par.GetTile();
+					blockedTiles.push(par.GetTile());
 				}
 			}
 		}
 	}
-	return false;
+	return (blockedTiles.len() != 0) ? blockedTiles : false;
 }
 
 function RoadBlockade::GetAroundBlockade(startTile, endTile){
 	local path = RoadBlockade.FindBestPath(startTile, endTile);
 	RoadBlockade.BuildRoad(path);
+}
+
+function RoadBlockade::TurnAroundVehicles(vehicles){
+	if(vehicles == null) {
+		AILog.Warning("Vehicles are null!");
+		return false;
+	}
+	local count = vehicles.len();
+	for(local i = 0; i<count; ++i) {
+		AIVehicle.ReverseVehicle(vehicles[i]);
+	}
+	return true;
 }
 
 function RoadBlockade::BuildBridge(startTile, endTile){

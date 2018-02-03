@@ -1,26 +1,25 @@
 /**
  * @author Michal Zopp
- * @file players.nut
+ * @file player_manager.nut
  */
+ 
+require("player.nut");
 
- /**
+ /** TODO: LOAD AND SAVE THE PLAYERS WITH POINTS
   * @brief class Players, don't be fooled by the name. The name just states and handles
   *  one company as a one player. But in reality you can cooperate with other players
   *  in the same company. Currently Maximum Number of companies that can be on a server is 15.
   */
-class Players
+class PlayerManager
 { 
 	
-	static MAX_PLAYERS = 15; // The maximum that allows to join on one server
-	static MAX_KARMA_POINTS = 200; // Maximum points you can have
-	static DEFAULT_KARMA_POINTS = 100; // Default poins for karma
-	static MIN_KARMA_POINTS = 0; // Minimum points you can have
-	
-	_karma_points = array(15);
+	static MAX_PLAYERS = 15; // The maximum that allows to join on one server is 15, but for the convenince
+							 // of the for cycles, because the id goes from 1 to 15.
+	_player_list = array(0);
 	
 	constructor(){
-		for(local i = 0; i < MAX_PLAYERS; ++i) {
-			_karma_points[i]= DEFAULT_KARMA_POINTS;
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			this._player_list.push(Player(i+1));
 		}
 	}
 	
@@ -29,8 +28,7 @@ class Players
 			AILog.Info("PlayerID out of bounds.");
 			return false;
 		}
-		
-		_karma_points[playerID]= _karma_points[playerID] + points;
+		this._player_list[playerID].AddKarmaPoints(points);
 		return true;
 	}
 	
@@ -39,15 +37,16 @@ class Players
 			AILog.Info("PlayerID out of bounds.");
 			return false;
 		}
-		
-		_karma_points[playerID]= DEFAULT_KARMA_POINTS;
+		this._player_list[playerID].ResetKarmaPoints();
 		return true;
 	}
 	
 	function printPoints(){
 		AILog.Info("Player karma points ---------------------------");
-		for(local i = 0; i < MAX_PLAYERS; ++i) {
-			AILog.Info("Player with id: " + i + ", has karma of: " + _karma_points[i] + ".");
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			local points = this._player_list[i]._karma_points;
+			local id = this._player_list[i]._player_id;
+			AILog.Info("Player with id: " + id + ", has karma of: " + points + ".");
 		}
 	}
 	

@@ -1,6 +1,6 @@
 import("pathfinder.road", "RoadPathFinder", 4);
 
-require("players.nut");
+require("player_manager.nut");
 require("road_blockade.nut");
 
 class ZumAI extends AIController 
@@ -16,7 +16,7 @@ class ZumAI extends AIController
   
   constructor()
   {
-	_players = Players();
+	_players = PlayerManager();
     counter = 0;
   }
 }
@@ -34,7 +34,7 @@ function ZumAI::Start()
   BuildVehicles(3);
   while (true) {
     if(this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
-    if(this.GetTick() % 500 == 0) _players.printPoints();
+    if(this.GetTick() % 200 == 0) _players.printPoints();
 	//if(this.GetTick() % 1500 == 0) VehicleTurnAround(3);
 	//if(this.GetTick() % 5000 == 0) RoadBlockade.IsBlockadeOnPath(_path);
 	this.Sleep(1);
@@ -222,7 +222,7 @@ function BuildVehicles(number){
 function VehicleTurnAround(number){
 	for(local i = 0; i<number; ++i){
 		AIVehicle.ReverseVehicle(vehicle[i]);
-	  }
+	}
 }
 
 function BuildWorkAround(tileIndex, parTileIndex){
