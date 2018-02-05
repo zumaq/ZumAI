@@ -32,6 +32,7 @@ function ZumAI::Start()
   
   findAndBuildRoad();
   BuildVehicles(3);
+  _players.assignTowns();
   while (true) {
     if(this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
     if(this.GetTick() % 200 == 0) _players.printPoints();
@@ -76,6 +77,12 @@ function findAndBuildRoad(){
   local townid_a = townlist.Begin();
   local townid_b = townlist.Next();
 
+  /* Printing town ratings in the town to determine how the rating work */
+  AILog.Info("Town: " + AITown.GetName(townid_a) + " comp_id 0, has rating: " + AITown.GetRating(townid_a,0));
+  AILog.Info("Town: " + AITown.GetName(townid_a) + " comp_id 1, has rating: " + AITown.GetRating(townid_a,1));
+  AILog.Info("Town: " + AITown.GetName(townid_a) + " comp_id 2, has rating: " + AITown.GetRating(townid_a,2));
+
+  
   /* Print the names of the towns we'll try to connect. */
   AILog.Info("Going to connect " + AITown.GetName(townid_a) + " to " + AITown.GetName(townid_b));
 

@@ -3,6 +3,8 @@
  * @file player.nut
  */
 
+require("towns.nut");
+ 
  /** TODO: LOAD AND SAVE THE PLAYERS WITH POINTS
   * @brief class Player, don't be fooled by the name. The name just states and handles
   *  one company as a one player. But in reality you can cooperate with other players
@@ -16,11 +18,13 @@ class Player
 	_player_id=null;
 	_road_blockade_tiles = null; //this is a array of blocked tiles by the particular player
 	_karma_points=null;
+	_towns=null;
 	
 	constructor(id){
-		this._player_id=id;
+		this._player_id = id;
 		this._road_blockade_tiles = array(0);
-		this._karma_points=DEFAULT_KARMA_POINTS;
+		this._towns = Towns();
+		this._karma_points = DEFAULT_KARMA_POINTS;
 	}
 	
 	function AddKarmaPoints(points);
@@ -28,6 +32,12 @@ class Player
 	function ResetKarmaPoints();
 	
 	function AddRoadBlockedTile(tile);
+	
+	function AddTown(townId);
+	
+	function ClearTowns();
+	
+	function PunishPlayer();
 	
 	function RemoveRoadBlockedTile(tile);
 	
@@ -59,13 +69,27 @@ function Player::AddRoadBlockedTile(tile){
 	return true;
 }
 
+function Player::AddTown(townId){
+	local rating = AITown.GetRating(townId, this._player_id);
+	return this._towns.AddTown(townId, rating);
+}
+
+function Player::ClearTowns(){
+	this._towns.EmptyList();
+}
+
+function Player::PunishPlayer(){
+	this._towns.DecideAndPunish(this._karma_points);
+}
+
+
 function Player::RemoveRoadBlockedTile(tile){
 	if (!Player.IsRoadBlockedTileSet(tile)) {
 		AILog.Info("This tile was already removed.");
 		return false;
 	}
 	this._road_blocked_tile.pop(tile);
-	this._karma_points.AddKarmaPoints(50); //player has removed blockade so he deserves points.
+	this._karma_points.AddKarmaPoints(30); //player has removed blockade so he deserves points.
 	return true;
 }
 
