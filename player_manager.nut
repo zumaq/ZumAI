@@ -62,6 +62,10 @@ class PlayerManager
 		this._player_list[0]._towns.BuildHeliPorts();
 	}
 	
+	function testDepotDestroy(){
+		this._player_list[0]._towns.DestroyDepoTileInCity();
+	}
+	
 	function printPoints(){
 		AILog.Info("Player karma points and town ratings---------------------------");
 		for(local i = 0; i < MAX_PLAYERS; i++) {

@@ -84,9 +84,22 @@ class Towns
 	function BuildHeliPorts();
 	
 	/**
+	* @brief RemoveRoadBeforeDepot, removes the road from the tile you get it from every direction. 
+	* @param tile, tile you want to remove completely.
+	*/
+	function RemoveRoadBeforeDepot(tile);
+	
+	/**
+	* @brief BuildRailOnTile, builds a rail tile you cant build roads on a tile. 
+	* @param tile, tile you want to build on.
+	*/
+	function BuildRailOnTile(tile);
+	
+	/**
 	* @brief DestroyDepoTileInCity, destroys and build rail in a tile that is right in front of depo. 
 	*/
 	function DestroyDepoTileInCity();
+	
 	
 	/**
 	* @brief DecideAndPunish, this function decides what is the best way to punish the oponent
@@ -254,7 +267,9 @@ function Towns::CheckDepoTileInCity(tile, distance){
 	local moves = distance * 2;
 	for (local l = 0; l < 4; l++){
 		for (local i = 0; i < moves; i++){
-			if (AIRoad.IsRoadDepotTile(candidateTile)){
+			if (AIRoad.IsRoadDepotTile(candidateTile) 
+				&& !AICompany.IsMine(AITile.GetOwner(candidateTile))
+				&& !AIRail.IsRailTile(AIRoad.GetRoadDepotFrontTile(candidateTile))){
 				return candidateTile;
 			}
 			if(l == 0){
@@ -271,7 +286,21 @@ function Towns::CheckDepoTileInCity(tile, distance){
 			}
 		}
 	}
-	return false;
+	return tile;
+}
+
+function Towns::RemoveRoadBeforeDepot(tile){
+	AIRoad.RemoveRoad(tile, tile + AIMap.GetTileIndex(0, 1));
+	AIRoad.RemoveRoad(tile, tile + AIMap.GetTileIndex(1, 0));
+	AIRoad.RemoveRoad(tile, tile + AIMap.GetTileIndex(0, -1));
+	AIRoad.RemoveRoad(tile, tile + AIMap.GetTileIndex(-1, 0));
+	Towns.BuildRailOnTile(tile);
+}
+
+function Towns::BuildRailOnTile(tile){
+	local types = AIRailTypeList();
+	AIRail.SetCurrentRailType(types.Begin());
+	AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_NE);
 }
 
 function Towns::DestroyDepoTileInCity(){
@@ -283,14 +312,18 @@ function Towns::DestroyDepoTileInCity(){
 	if(this._town_list.IsEnd()){
 		return false;
 	}
-	local depoTile = false;
+	local depoTile = AITown.GetLocation(candidateTown);
 	for (local i=0; depoTile == false || i < 8; i++){
 		AILog.Info("Depofinding cycle: " + i);
 		depoTile = Towns.CheckDepoTileInCity(depoTile, i);
 	}
-	if (depoTile != false){
-		//TODO : destroing the tile and replacing the fron with a rail !!!!
+	if (depoTile != AITown.GetLocation(candidateTown)){
+		local tile = AIRoad.GetRoadDepotFrontTile(depoTile);
+		AILog.Info("Tile in front of the Depot x: " + AIMap.GetTileX(tile) + " y: " + AIMap.GetTileY(tile));
+		Towns.RemoveRoadBeforeDepot(tile);
+		return true;
 	}
+	return false;
 }
 
 function Towns::DecideAndPunish(points){
