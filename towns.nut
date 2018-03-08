@@ -70,16 +70,35 @@ class Towns
 	function Advertise(size);
 	
 	/**
+	* @brief CheckAirportTiles, checks if there is a space around the center tile, with the distance,
+	* returns the buildable tile, if not returns the original center tile.
+	* @param tile, center tile of the city you want to build
+	* @param distance, distance from the center tile you want to check.
+	*/
+	function CheckAirportTiles(tile, distance);
+	
+	/**
 	* @brief BuildHeliPorts, build heliports in the most city rating a preson has to 
 	* avoid him getting to build airports.
 	*/
 	function BuildHeliPorts();
 	
 	/**
-	* @brief Decide, this fuction decides what is the best way to punish the oponent
-	* @param points, points that the player has to decite how to punish range(0-100-200)
+	* @brief DestroyDepoTileInCity, destroys and build rail in a tile that is right in front of depo. 
+	*/
+	function DestroyDepoTileInCity();
+	
+	/**
+	* @brief DecideAndPunish, this function decides what is the best way to punish the oponent
+	* @param points, points that the player has to decide how to punish, range(0-100-200)
 	*/
 	function DecideAndPunish(points);
+	
+	/**
+	* @brief DecideAndPunishMore, this function decides and punishes the player, but more!
+	* @param points, points that the player has to decide how to punish, range(0-100-200)
+	*/
+	function DecideAndPunishMore(points);
 	
 	/**
 	* @brief PrintTownRaiting, prints the town raiting and town names for the
@@ -97,7 +116,7 @@ function Towns::AddTown(townId, rating){
 }
 
 function Towns::SortTownList(){
-	//_town_list.Valuate(AITown.GetRating);
+	//_town_list.Valuate(AITown.GetRating); dosent need a valuator, there altredy is a value in the list
 	this._town_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
 }
 
@@ -123,7 +142,7 @@ function Towns::BribeTown(){
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BRIBE)){
 		candidateTown = this._town_list.Next();
 	}
-	if(candidateTown.IsEnd()){
+	if(this._town_list.IsEnd()){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_BRIBE);
@@ -135,7 +154,7 @@ function Towns::RebuildRoads(){
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_ROAD_REBUILD)){
 		candidateTown = this._town_list.Next();
 	}
-	if(candidateTown.IsEnd()){
+	if(this._town_list.sIsEnd()){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_ROAD_REBUILD);
@@ -147,7 +166,7 @@ function Towns::FundBuildings(){
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_FUND_BUILDINGS)){
 		candidateTown = this._town_list.Next();
 	}
-	if(candidateTown.IsEnd()){
+	if(this._town_list.IsEnd()){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_FUND_BUILDINGS);
@@ -159,7 +178,7 @@ function Towns::BuyRights(){
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BUY_RIGHTS)){
 		candidateTown = this._town_list.Next();
 	}
-	if(candidateTown.IsEnd()){
+	if(this._town_list.IsEnd()){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_BUY_RIGHTS);
@@ -174,18 +193,19 @@ function Towns::Advertise(size){
 	while(!AITown.IsActionAvailable(candidateTown, size)){
 		candidateTown = this._town_list.Next();
 	}
-	if(candidateTown.IsEnd()){
+	if(this._town_list.IsEnd()){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, size);
 }
 
 function Towns::CheckAirportTiles(tile, distance){
-	local candidateTile = tile + AIMap.GetTileIndex(-1,-1);
+	local candidateTile = tile + AIMap.GetTileIndex(-distance,-distance);
 	local moves = distance * 2;
-	for (local l=0; l < 4; l++){
-		for (local i=0; i < moves; i++){
-			AILog.Info("CHeckAirportTiles cycle: " + i);
+	for (local l = 0; l < 4; l++){
+		for (local i = 0; i < moves; i++){
+			AILog.Info("CheckAirportTiles cycle: " + i +
+						"tile x: " + AIMap.GetTileX(candidateTile) + "tile y: " + AIMap.GetTileY(candidateTile));
 			if (AITile.IsBuildable(candidateTile)){
 				return candidateTile;
 			}
@@ -203,12 +223,16 @@ function Towns::CheckAirportTiles(tile, distance){
 			}
 		}
 	}
-	//this is here so that the for cycle has something to chach the build an continues, 1 tile always is false
+	//this is here so that the for cycle has something to catch the build an continues, 1 tile always is false
 	return tile;
 }
 
 function Towns::BuildHeliPorts(){
-	Towns.SortTownList();
+	if (!AIAirport.IsValidAirportType(AIAirport.AT_HELIPORT)){
+		AILog.Info("Its not a time to build Helicopters yet");
+		return false;
+	}
+	SortTownList();
 	local candidateTown = this._town_list.Begin();
 	while(AITown.GetAllowedNoise(candidateTown) == 0){
 		candidateTown = this._town_list.Next();
@@ -225,20 +249,89 @@ function Towns::BuildHeliPorts(){
 	return candidateTile;
 }
 
+function Towns::CheckDepoTileInCity(tile, distance){
+	local candidateTile = tile + AIMap.GetTileIndex(-distance,-distance);
+	local moves = distance * 2;
+	for (local l = 0; l < 4; l++){
+		for (local i = 0; i < moves; i++){
+			if (AIRoad.IsRoadDepotTile(candidateTile)){
+				return candidateTile;
+			}
+			if(l == 0){
+				candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+			}
+			if(l == 1){
+				candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+			}
+			if(l == 2){
+				candidateTile = candidateTile + AIMap.GetTileIndex(0,-1);
+			}
+			if(l == 3){
+				candidateTile = candidateTile + AIMap.GetTileIndex(-1,0);
+			}
+		}
+	}
+	return false;
+}
+
+function Towns::DestroyDepoTileInCity(){
+	SortTownList();
+	local candidateTown = this._town_list.Begin();
+	while(AITown.GetAllowedNoise(candidateTown) == 0){
+		candidateTown = this._town_list.Next();
+	}
+	if(this._town_list.IsEnd()){
+		return false;
+	}
+	local depoTile = false;
+	for (local i=0; depoTile == false || i < 8; i++){
+		AILog.Info("Depofinding cycle: " + i);
+		depoTile = Towns.CheckDepoTileInCity(depoTile, i);
+	}
+	if (depoTile != false){
+		//TODO : destroing the tile and replacing the fron with a rail !!!!
+	}
+}
+
 function Towns::DecideAndPunish(points){
-	//points -0 100 200 case has bad syntax
+	//points - 0 100 200 case has bad syntax
 	if (points > 140) {
 		Towns.Advertise((points-140) % 20);
+		return;
 	} else if (points > 120) {
 		Towns.BuildTownStatue();
+		return;
 	} else if (points > 100) {
 		Towns.FundBuildings();
+		return;
 	} else if (points > 80) {
 		Towns.RebuildRoads();
+		return;
 	} else if (points > 60) {
 		Towns.BuyRights();
+		return;
 	} else if (points > 40) {
 		Towns.BribeTown();
+		return;
+	}
+}
+
+function Towns::DecideAndPunishMore(points){
+	if (points > 120) {
+		Towns.BuildHeliPorts();
+		return;
+	} else if (points > 100) {
+		Towns.DestroyDepoTileInCity();
+		return;
+	} else if (points > 80) {
+		//Towns.RebuildRoads();
+		return;
+	} else if (points > 60) {
+		//Towns.BuyRights();
+		return;
+	} else if (points > 40) {
+		//Towns.BribeTown();
+		return;
 	}
 }
 

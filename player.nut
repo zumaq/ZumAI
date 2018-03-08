@@ -39,6 +39,8 @@ class Player
 	
 	function PunishPlayer();
 	
+	function MorePunishPlayer();
+	
 	function RemoveRoadBlockedTile(tile);
 	
 	function IsRoadBlockedTileSet(tile);
@@ -78,10 +80,13 @@ function Player::ClearTowns(){
 	this._towns.EmptyList();
 }
 
-function Player::PunishPlayer(){
+function Player::LightPunishPlayer(){
 	this._towns.DecideAndPunish(this._karma_points);
 }
 
+function Player::MorePunishPlayer(){
+	return this._towns.DecideAndPunishMore(this._karma_points);
+}
 
 function Player::RemoveRoadBlockedTile(tile){
 	if (!Player.IsRoadBlockedTileSet(tile)) {

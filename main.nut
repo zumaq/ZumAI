@@ -35,7 +35,7 @@ function ZumAI::Start()
   _players.assignTowns();
   while (true) {
     if(this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
-    //if(this.GetTick() % 200 == 0) _players.printPoints();
+    //if(this.GetTick() % 500 == 0) _players.printPoints();
 	if(this.GetTick() % 200 == 0) _players.testHeliPorts();
 	//if(this.GetTick() % 1500 == 0) VehicleTurnAround(3);
 	//if(this.GetTick() % 5000 == 0) RoadBlockade.IsBlockadeOnPath(_path);
