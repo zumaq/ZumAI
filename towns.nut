@@ -8,10 +8,10 @@
   */
 class Towns
 {
-	_town_list=null;
+	_town_list = null;
 	
 	constructor(){
-		this._town_list=AIList();
+		this._town_list = AIList();
 	}
 	
 	/**
@@ -70,6 +70,12 @@ class Towns
 	function Advertise(size);
 	
 	/**
+	* @brief BuildHeliPorts, build heliports in the most city rating a preson has to 
+	* avoid him getting to build airports.
+	*/
+	function BuildHeliPorts();
+	
+	/**
 	* @brief Decide, this fuction decides what is the best way to punish the oponent
 	* @param points, points that the player has to decite how to punish range(0-100-200)
 	*/
@@ -91,7 +97,7 @@ function Towns::AddTown(townId, rating){
 }
 
 function Towns::SortTownList(){
-	this._town_list.Valuate(AITown.GetRating);
+	//_town_list.Valuate(AITown.GetRating);
 	this._town_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
 }
 
@@ -114,8 +120,7 @@ function Towns::BuildTownStatue(){
 function Towns::BribeTown(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	while(!candidateTown.IsEnd() 
-		  && !AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BRIBE)){
+	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BRIBE)){
 		candidateTown = this._town_list.Next();
 	}
 	if(candidateTown.IsEnd()){
@@ -127,8 +132,7 @@ function Towns::BribeTown(){
 function Towns::RebuildRoads(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	while(!candidateTown.IsEnd() 
-		  && !AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_ROAD_REBUILD)){
+	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_ROAD_REBUILD)){
 		candidateTown = this._town_list.Next();
 	}
 	if(candidateTown.IsEnd()){
@@ -140,8 +144,7 @@ function Towns::RebuildRoads(){
 function Towns::FundBuildings(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	while(!candidateTown.IsEnd() 
-		  && !AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_FUND_BUILDINGS)){
+	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_FUND_BUILDINGS)){
 		candidateTown = this._town_list.Next();
 	}
 	if(candidateTown.IsEnd()){
@@ -153,8 +156,7 @@ function Towns::FundBuildings(){
 function Towns::BuyRights(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	while(!candidateTown.IsEnd() 
-		  && !AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BUY_RIGHTS)){
+	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BUY_RIGHTS)){
 		candidateTown = this._town_list.Next();
 	}
 	if(candidateTown.IsEnd()){
@@ -169,14 +171,58 @@ function Towns::Advertise(size){
 	}
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	while(!candidateTown.IsEnd() 
-		  && !AITown.IsActionAvailable(candidateTown, size)){
+	while(!AITown.IsActionAvailable(candidateTown, size)){
 		candidateTown = this._town_list.Next();
 	}
 	if(candidateTown.IsEnd()){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, size);
+}
+
+function Towns::CheckAirportTiles(tile, distance){
+	local candidateTile = tile + AIMap.GetTileIndex(-1,-1);
+	local moves = distance * 2;
+	for (local l=0; l < 4; l++){
+		for (local i=0; i < moves; i++){
+			AILog.Info("CHeckAirportTiles cycle: " + i);
+			if (AITile.IsBuildable(candidateTile)){
+				return candidateTile;
+			}
+			if(l == 0){
+				candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+			}
+			if(l == 1){
+				candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+			}
+			if(l == 2){
+				candidateTile = candidateTile + AIMap.GetTileIndex(0,-1);
+			}
+			if(l == 3){
+				candidateTile = candidateTile + AIMap.GetTileIndex(-1,0);
+			}
+		}
+	}
+	//this is here so that the for cycle has something to chach the build an continues, 1 tile always is false
+	return tile;
+}
+
+function Towns::BuildHeliPorts(){
+	Towns.SortTownList();
+	local candidateTown = this._town_list.Begin();
+	while(AITown.GetAllowedNoise(candidateTown) == 0){
+		candidateTown = this._town_list.Next();
+	}
+	if(this._town_list.IsEnd()){
+		return false;
+	}
+	local candidateTile = AITown.GetLocation(candidateTown);
+	AILog.Info("town with tile: " + candidateTile + " has noise level: " + AITown.GetAllowedNoise(candidateTown));
+	for (local i=0; !AIAirport.BuildAirport(candidateTile, AIAirport.AT_HELIPORT, AIStation.STATION_NEW); i++){
+		AILog.Info("BuildHeliPorts cycle: " + i);
+		candidateTile = Towns.CheckAirportTiles(candidateTile, i);
+	}
+	return candidateTile;
 }
 
 function Towns::DecideAndPunish(points){
