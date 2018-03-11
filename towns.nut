@@ -306,17 +306,26 @@ function Towns::BuildRailOnTile(tile){
 function Towns::DestroyDepoTileInCity(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	while(AITown.GetAllowedNoise(candidateTown) == 0){
-		candidateTown = this._town_list.Next();
-	}
 	if(this._town_list.IsEnd()){
 		return false;
 	}
+	
 	local depoTile = AITown.GetLocation(candidateTown);
-	for (local i=0; depoTile == false || i < 8; i++){
-		AILog.Info("Depofinding cycle: " + i);
-		depoTile = Towns.CheckDepoTileInCity(depoTile, i);
+	for (local l=0; depoTile == AITown.GetLocation(candidateTown) && l < 2; l++){
+		AILog.Info("Checking town with name: " + AITown.GetName(candidateTown));
+		for (local i=0; depoTile == AITown.GetLocation(candidateTown) && i < 8; i++){
+			AILog.Info("Depofinding cycle: " + i);
+			depoTile = Towns.CheckDepoTileInCity(depoTile, i);
+		}
+		if (depoTile == AITown.GetLocation(candidateTown)){ // if you cant find one then check other city
+			candidateTown = this._town_list.Next();
+			depoTile = AITown.GetLocation(candidateTown);
+			if(this._town_list.IsEnd()){
+				return false;
+			}
+		}
 	}
+	
 	if (depoTile != AITown.GetLocation(candidateTown)){
 		local tile = AIRoad.GetRoadDepotFrontTile(depoTile);
 		AILog.Info("Tile in front of the Depot x: " + AIMap.GetTileX(tile) + " y: " + AIMap.GetTileY(tile));
