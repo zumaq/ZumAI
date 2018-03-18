@@ -4,6 +4,7 @@
  */
  
 require("player.nut");
+require("road_blockade.nut");
 
  /** TODO: LOAD AND SAVE THE PLAYERS WITH POINTS
   *  TODO: Maybe players can be represent dynamicly with id, check it out
@@ -17,11 +18,13 @@ class PlayerManager
 	static MAX_PLAYERS = 15; // The maximum that allows to join on one server is 15, but for the convenince
 							 // of the for cycles, because the id goes from 1 to 15.
 	_player_list = array(0);
+	_roadBlockade = null;
 	
 	constructor(){
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list.push(Player(i));
 		}
+		this._roadBlockade = RoadBlockade();
 	}
 	
 	function addKarmaPoints(playerID, points){
@@ -64,6 +67,34 @@ class PlayerManager
 	
 	function testDepotDestroy(){
 		this._player_list[0]._towns.DestroyDepoTileInCity();
+	}
+	
+	function testSurroundCity(){
+		this._player_list[0]._towns.SurroundCityWithRails();
+	}
+	
+	function checkForRoadBlockadeOnPath(path){
+		local array = this._roadBlockade.IsBlockadeOnPath(path);
+		if (array == false){
+			AILog.Info("There is no blockade");
+			return false;
+		}
+		
+		local count = array.len();
+		local owner = null;
+		for(local i = 0; i<count; ++i) {
+			if (AIRoad.IsRoadTile(array[i] + AIMap.GetTileIndex(0, 1))){
+				owner = this._roadBlockade.WhoDidTheBlockade(array[i], 1);
+			} else {
+				owner = this._roadBlockade.WhoDidTheBlockade(array[i], 0);
+			}
+			AILog.Info("-----> Blockade on tile: " + array[i] + " owner: " + owner);
+			this.AddKarmaPoints(owner, -50);
+			this._player_list[owner]._road_blockade_tiles.push(array[i]);
+			
+			//this is just a test for a function if it works
+			this._player_list[owner]._towns.DestroyDepoTileInCity();
+		}
 	}
 	
 	function printPoints(){

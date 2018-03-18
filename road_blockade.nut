@@ -47,6 +47,19 @@ class RoadBlockade
     * @param path, the path you want to check
     */
     function IsBlockadeOnPath(path);
+	
+	/**
+    * @brief FindGoodRoadTile, finds out where is the the nearest road and returns it;
+    * @param tile, tile where is original depo
+    */
+	function FindGoodRoadTile(tile);
+	
+	/**
+    * @brief  IsBlockadeInFrontOfDepo, finds out if there is a tile in front of depo, builds
+	* another one and decreese karma points
+    * @param depoTile, tile where is depo
+    */
+    function IsBlockadeInFrontOfDepo(depoTile);
 
 	/**
 	* @brief GetAroundBlockade, calls functions to get around the blockade.
@@ -162,14 +175,16 @@ function RoadBlockade::WhoDidTheBlockade(tile, roadDirection) {
 	return (owner > -1 && owner < 16) ? owner : false;
 }
 
-function RoadBlockade::IsBlockadeOnPath(path) {
-	if (path == null) {
+function RoadBlockade::IsBlockadeOnPath(_path) {
+	if (_path == null) {
 		AILog.Error("path is null");
 		return false;
 	}
+	local path = _path
 	local blockedTiles = array(0);
 	while (path != null) {
 		local par = path.GetParent();
+		//AILog.Info("While Cycle tile:" + path.GetTile());
 		if (par != null) {
 			if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1 ) {
 				if (AIRail.IsLevelCrossingTile(par.GetTile())) {
@@ -179,8 +194,61 @@ function RoadBlockade::IsBlockadeOnPath(path) {
 				}
 			}
 		}
+		path = par;
 	}
 	return (blockedTiles.len() != 0) ? blockedTiles : false;
+}
+
+function RoadBlockade::FindGoodRoadTile(tile){
+	for (local k=0; k<4; k++){
+		local candidateTile = tile + AIMap.GetTileIndex(-(k+1),-(k+1));
+		for (local l = 0; l < 4; l++){
+			for (local i = 0; i < 5; i++){
+				if (AIRoad.IsRoadTile(candidateTile)
+					&& !AIRail.IsRailTile(candidateTile)){
+					return candidateTile;
+				}
+				if(l == 0){
+					candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+				}
+				if(l == 1){
+					candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+				}
+				if(l == 2){
+					candidateTile = candidateTile + AIMap.GetTileIndex(0,-1);
+				}
+				if(l == 3){
+					candidateTile = candidateTile + AIMap.GetTileIndex(-1,0);
+				}
+			}
+		}
+	}
+}
+
+function RoadBlockade::IsBlockadeInFrontOfDepo(depoTile){
+	if (!AIRail.IsRailTile(AIRoad.GetRoadDepotFrontTile(depoTile))){
+		AILog.Info("There is no blockade in front of depot tile");
+		return null;
+	}
+	
+	local roadTile = RoadBlockade.FindGoodRoadTile(depoTile);
+	AILog.Info("Found Road Tile x: " + AIMap.GetTileX(roadTile) + " y: " + AIMap.GetTileY(roadTile));
+	local newDepoTile = roadTile;
+	
+	if (AIRoad.BuildRoadDepot(newDepoTile + AIMap.GetTileIndex(0,1), roadTile)){
+		return (newDepoTile + AIMap.GetTileIndex(0,1));
+	}
+	if (AIRoad.BuildRoadDepot(newDepoTile + AIMap.GetTileIndex(0,-1), roadTile)){
+		return (newDepoTile + AIMap.GetTileIndex(0,-1));
+	}
+	if (AIRoad.BuildRoadDepot(newDepoTile + AIMap.GetTileIndex(1,0), roadTile)){
+		return (newDepoTile + AIMap.GetTileIndex(1,0));
+	}
+	if (AIRoad.BuildRoadDepot(newDepoTile + AIMap.GetTileIndex(-1,0), roadTile)){
+		return (newDepoTile + AIMap.GetTileIndex(-1,0));
+	}
+	AILog.Info("Couldn't find a good tile");
+	return null;
 }
 
 function RoadBlockade::GetAroundBlockade(startTile, endTile){
@@ -236,7 +304,7 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 	local path = false;
 	while (path == false) {
 		path = pathfinder.FindPath(50);
-		this.Sleep(1);
+		AIController.Sleep(1);
 	}
 	
 	if (path == null) {

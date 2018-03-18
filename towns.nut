@@ -100,6 +100,29 @@ class Towns
 	*/
 	function DestroyDepoTileInCity();
 	
+	/**
+	* @brief GetFourPointsAround, calculates 4 points around the city in the distance, return array
+	* @param tile, center tile of the city you want to surround
+	*/
+	function GetFourPointsAround(tile);
+	
+	/**
+	* @brief BuildRailsFromArray, builds a rail line from the 4 positions in array. 
+	* @param array, array you want to build from.
+	*/
+	function BuildRailsFromArray(array);
+	
+	/**
+	* @brief BuildRailsAroundCity, builds rails in a x and y lines
+	* @param tile, center tile of the city you want to surround
+	*/
+	function BuildRailsAroundCity(tile);
+	
+	/**
+	* @brief SurroundCityWithRails, surround city with rails, in order to stop the growth of the city. 
+	*/
+	function SurroundCityWithRails();
+	
 	
 	/**
 	* @brief DecideAndPunish, this function decides what is the best way to punish the oponent
@@ -300,13 +323,19 @@ function Towns::RemoveRoadBeforeDepot(tile){
 function Towns::BuildRailOnTile(tile){
 	local types = AIRailTypeList();
 	AIRail.SetCurrentRailType(types.Begin());
-	AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_NE);
+	if (AITile.HasTreeOnTile(tile)) {
+		AITile.DemolishTile(tile);
+	}
+	if (AIRail.IsRailTile(tile)){
+		return false;
+	}
+	return (AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_NE)) ? true : AIRail.BuildRailTrack(tile, AIRail.RAILTRACK_NW_SW);
 }
 
 function Towns::DestroyDepoTileInCity(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	if(this._town_list.IsEnd()){
+	if(this._town_list.IsEnd() || this._town_list.GetValue(candidateTown) == 0){
 		return false;
 	}
 	
@@ -333,6 +362,160 @@ function Towns::DestroyDepoTileInCity(){
 		return true;
 	}
 	return false;
+}
+
+function Towns::GetFourPointsAround(tile){
+	local array = array(0);
+	local candidateTile = null;
+	local distance = 4;
+	if (AITown.GetPopulation(AITile.GetTownAuthority(tile)) > 2500){
+		distance = 7;
+	}
+	for (local l = 0; l < distance; ++l){
+	candidateTile = tile;
+		for (local i = 1; i < 6; ++i){
+			if(l == 0){
+				candidateTile = candidateTile + AIMap.GetTileIndex(-1,-1);
+			}
+			if(l == 1){
+				candidateTile = candidateTile + AIMap.GetTileIndex(-1,1);
+			}
+			if(l == 2){
+				candidateTile = candidateTile + AIMap.GetTileIndex(1,1);
+			}
+			if(l == 3){
+				candidateTile = candidateTile + AIMap.GetTileIndex(1,-1);
+			}
+			if (AITile.IsBuildable(candidateTile)){
+				AILog.Info("candidate Tile: " + candidateTile + " l = " + l + " i = " + i);
+				array.push(candidateTile);
+				break;
+			}
+			AILog.Info("Tile x: " + AIMap.GetTileX(candidateTile) + " y: "
+						+ AIMap.GetTileY(candidateTile) + " l = " + l + " i = " + i);
+		}
+	}
+	return (array.len() != 4) ? false : array;
+}
+
+//TODO: Funguje, ale niekedy su tam miesta prazdne.
+function Towns::BuildRailsFromArray(array){
+	local types = AIRailTypeList();
+	AIRail.SetCurrentRailType(types.Begin());
+	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+	
+	for (local i=0; i<4; ++i){
+		local tile_a = array[i];
+		local tile_b = null;
+		if (i == 3){
+			tile_b = array[0];
+		} else {
+			tile_b = array[i+1];
+		}
+		AILog.Info("tile a x: " + AIMap.GetTileX(tile_a) + "tile a y: " + AIMap.GetTileY(tile_a)
+				+ "tile b x: " + AIMap.GetTileX(tile_b) + "tile b y: " + AIMap.GetTileY(tile_b));
+		local pathfinder = RoadPathFinder();
+		//pathfinder.cost.tile=50;
+		pathfinder.cost.no_existing_road=-110;
+		//pathfinder.cost.turn=5;
+		pathfinder.cost.slope=0;
+		pathfinder.cost.max_bridge_length=0;
+		pathfinder.cost.max_tunnel_length=0;
+		/*pathfinder.InitializePath([tile_a, tile_a + AIMap.GetTileIndex(-1, 0), tile_a + AIMap.GetTileIndex(1, 0),
+								  tile_a + AIMap.GetTileIndex(0, -1), tile_a + AIMap.GetTileIndex(0, 1)],
+								  [tile_b, tile_b + AIMap.GetTileIndex(-1, 0), tile_b + AIMap.GetTileIndex(1, 0),
+								  tile_b + AIMap.GetTileIndex(0, -1), tile_b + AIMap.GetTileIndex(0, 1)]);*/
+		pathfinder.InitializePath([tile_a], [tile_b]);
+		
+		local path = false;
+		while (path == false) {
+			path = pathfinder.FindPath(50);
+			AIController.Sleep(1);
+		}
+		if (path == null) {
+			/* No path was found. */
+			AILog.Error("pathfinder.FindPath return null");
+			continue;
+		}
+		
+		path = path.GetParent();
+		while (path != null) {
+			local par = path.GetParent();
+			if (par != null) {
+				Towns.BuildRailOnTile(path.GetTile());
+				AILog.Info("tile a x: " + AIMap.GetTileX(path.GetTile()) + "tile a y: " + AIMap.GetTileY(path.GetTile()));
+			}
+			path = par;
+		}
+	}
+}
+
+function Towns::BuildRailsAroundCity(tile){
+	local candidateTile = tile;
+	local buildTile = null;
+	local distance = 4;
+	if (AITown.GetPopulation(AITile.GetTownAuthority(tile)) > 2500){
+		distance = 6;
+	}
+	for (local l=0; l<2; l++){
+		if (l == 0){
+			candidateTile = tile + AIMap.GetTileIndex(0, -distance);
+		} 
+		if (l == 1){
+			candidateTile = tile + AIMap.GetTileIndex(-distance, 0);
+		}
+		for (local i=0; i<2*distance; i++){
+			if(l == 0){
+				candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+			}
+			if(l == 1){
+				candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+			}
+			buildTile = candidateTile;
+			for (local k=0; k<2; k++){
+				while (!Towns.BuildRailOnTile(buildTile) || !AIRail.IsRailTile(buildTile)){
+					if (l == 0){
+						if (k == 0) {
+							buildTile = buildTile + AIMap.GetTileIndex(-1,0);
+						}
+						if (k == 1){
+							buildTile = buildTile + AIMap.GetTileIndex(1,0);
+						}
+					}
+					if (l== 1){
+						if (k == 0) {
+							buildTile = buildTile + AIMap.GetTileIndex(0,-1);
+						}
+						if (k == 1){
+							buildTile = buildTile + AIMap.GetTileIndex(0,-1);
+						}
+					}
+				}
+				AILog.Info("Build tile on x: " + AIMap.GetTileX(buildTile) + " y: " + AIMap.GetTileY(buildTile));
+			}
+		}
+	}
+}
+
+function Towns::SurroundCityWithRails(){
+	SortTownList();
+	local candidateTown = this._town_list.Begin();
+	//candidateTown = this._town_list.Next();
+	local candidateTile = AITown.GetLocation(candidateTown);
+	AILog.Info("Surround city: " + candidateTown + " value: " + this._town_list.GetValue(candidateTown));
+	if(this._town_list.IsEnd() || this._town_list.GetValue(candidateTown) == 0){
+		return false;
+	}
+	
+	//this.BuildRailsAroundCity(candidateTile);
+	local array = GetFourPointsAround(candidateTile);
+	
+	if(array == false){
+		AILog.Info("Couldn't find a path");
+		return false;
+	}
+	
+	this.BuildRailsFromArray(array);
 }
 
 function Towns::DecideAndPunish(points){
@@ -366,7 +549,7 @@ function Towns::DecideAndPunishMore(points){
 		Towns.DestroyDepoTileInCity();
 		return;
 	} else if (points > 80) {
-		//Towns.RebuildRoads();
+		Towns.SurroundCityWithRails();
 		return;
 	} else if (points > 60) {
 		//Towns.BuyRights();
