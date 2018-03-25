@@ -18,6 +18,8 @@ class Player
 	_player_id=null;
 	_road_blockade_tiles = null; //this is a array of blocked tiles by the particular player
 	_karma_points=null;
+	_quotient = null; //quotient that represents how much the player gets points, depending
+					  //on previous actions.
 	_towns=null;
 	
 	constructor(id){
@@ -25,6 +27,7 @@ class Player
 		this._road_blockade_tiles = array(0);
 		this._towns = Towns();
 		this._karma_points = DEFAULT_KARMA_POINTS;
+		_quotient = 1;
 	}
 	
 	function AddKarmaPoints(points);
@@ -47,12 +50,22 @@ class Player
 }
 
 function Player::AddKarmaPoints(points){
-	this._karma_points = this._karma_points + points;
+	this._karma_points = this._karma_points + (points * _quotient);
+	
+	// distribute the points
 	if(this._karma_points > MAX_KARMA_POINTS){
 		this._karma_points = MAX_KARMA_POINTS;
 	}
 	if(this._karma_points < MIN_KARMA_POINTS){
 		this._karma_points = MIN_KARMA_POINTS;
+	}
+	
+	//calculate new _quotient based on the points gained.
+	local pointsSign = (points > 0) ? 1 : -1;
+	if (points > 0){
+		_quotient = _quotient * 1.2
+	} else {
+		_quotient = _quotient * 0.8
 	}
 	return this._karma_points
 }
@@ -80,12 +93,31 @@ function Player::ClearTowns(){
 	this._towns.EmptyList();
 }
 
+function Player::CheckAndPunish(){
+	if (this._karma_points >= 150){
+		AILog.Info("Player has > 150 karma points, he is ok");
+		return false;
+	}
+	
+	if (this._karma_points >= 100){
+		AILog.Info("Player has > 100 karma points, he gets light punish");
+		this.LightPunishPlayer();
+		return true;
+	}
+	
+	if (this._karma_points > 50){
+		AILog.Info("Player has > 50 karma points, he gets more punish");
+		this.MorePunishPlayer();
+		return true;
+	}
+}
+
 function Player::LightPunishPlayer(){
 	this._towns.DecideAndPunish(this._karma_points);
 }
 
 function Player::MorePunishPlayer(){
-	return this._towns.DecideAndPunishMore(this._karma_points);
+	this._towns.DecideAndPunishMore(this._karma_points);
 }
 
 function Player::RemoveRoadBlockedTile(tile){

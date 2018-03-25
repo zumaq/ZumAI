@@ -36,6 +36,14 @@ class PlayerManager
 		return true;
 	}
 	
+	function addKarmaPointsToAll(){
+		points = 20;
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			this._player_list[i].AddKarmaPoints(points);
+		}
+		return true;
+	}
+	
 	function resetPlayerPoints(playerID){
 		if((playerID > (MAX_PLAYERS - 1))  || playerID < 0)	{
 			AILog.Info("PlayerID out of bounds.");
@@ -50,6 +58,9 @@ class PlayerManager
 		this.clearAllPlayersTownsRating();
 		for(local l = townlist.Begin(); !townlist.IsEnd(); l = townlist.Next()) {
 			for(local i = 0; i < MAX_PLAYERS; i++) {
+				if (-1 == AITown.GetRating(l, i)){
+					continue;
+				}
 				this._player_list[i].AddTown(l);
 			}
 		}
@@ -58,6 +69,18 @@ class PlayerManager
 	function clearAllPlayersTownsRating(){
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list[i].ClearTowns();
+		}
+	}
+	
+	function punishPlayersByKarmaPoints(){
+		this.clearAllPlayersTownsRating();
+		this.assignTowns();
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			AILog.Info("Checking player with id: " + i);
+			if (AICompany.IsMine(this._player_list[i]._player_id)){
+				continue;
+			}
+			this._player_list[i].CheckAndPunish();
 		}
 	}
 	
@@ -93,7 +116,7 @@ class PlayerManager
 			this._player_list[owner]._road_blockade_tiles.push(array[i]);
 			
 			//this is just a test for a function if it works
-			this._player_list[owner]._towns.DestroyDepoTileInCity();
+			//this._player_list[owner]._towns.DestroyDepoTileInCity();
 		}
 	}
 	

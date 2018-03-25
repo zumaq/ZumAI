@@ -163,8 +163,12 @@ function EmptyList(){
 function Towns::BuildTownStatue(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
-	while (HasStatue(candidateTown)) {
+	while (HasStatue(candidateTown) || this._town_list.GetValue(candidateTown) == 0) {
 		candidateTown = this._town_list.Next();
+		AILog.Info("While cycle.");
+		if(this._town_list.IsEnd()){
+			return false;
+		}
 	}
 	if (AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BUILD_STATUE)){
 		return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_BUILD_STATUE);
@@ -177,8 +181,12 @@ function Towns::BribeTown(){
 	local candidateTown = this._town_list.Begin();
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BRIBE)){
 		candidateTown = this._town_list.Next();
+		AILog.Info("While cycle.");
+		if(this._town_list.IsEnd()){
+			return false;
+		}
 	}
-	if(this._town_list.IsEnd()){
+	if(this._town_list.GetValue(candidateTown) == 0 ){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_BRIBE);
@@ -187,10 +195,15 @@ function Towns::BribeTown(){
 function Towns::RebuildRoads(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
+	AILog.Info("Starting rebuild roads");
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_ROAD_REBUILD)){
 		candidateTown = this._town_list.Next();
+		AILog.Info("While cycle.");
+		if(this._town_list.IsEnd()){
+			return false;
+		}
 	}
-	if(this._town_list.sIsEnd()){
+	if(this._town_list.GetValue(candidateTown) == 0 ){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_ROAD_REBUILD);
@@ -201,8 +214,12 @@ function Towns::FundBuildings(){
 	local candidateTown = this._town_list.Begin();
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_FUND_BUILDINGS)){
 		candidateTown = this._town_list.Next();
+		AILog.Info("While cycle.");
+		if(this._town_list.IsEnd()){
+			return false;
+		}
 	}
-	if(this._town_list.IsEnd()){
+	if(this._town_list.GetValue(candidateTown) == 0 ){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_FUND_BUILDINGS);
@@ -213,8 +230,12 @@ function Towns::BuyRights(){
 	local candidateTown = this._town_list.Begin();
 	while(!AITown.IsActionAvailable(candidateTown, AITown.TOWN_ACTION_BUY_RIGHTS)){
 		candidateTown = this._town_list.Next();
+		AILog.Info("While cycle.");
+		if(this._town_list.IsEnd()){
+			return false;
+		}
 	}
-	if(this._town_list.IsEnd()){
+	if(this._town_list.GetValue(candidateTown) == 0 ){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_BUY_RIGHTS);
@@ -228,8 +249,12 @@ function Towns::Advertise(size){
 	local candidateTown = this._town_list.Begin();
 	while(!AITown.IsActionAvailable(candidateTown, size)){
 		candidateTown = this._town_list.Next();
+		AILog.Info("While cycle.");
+		if(this._town_list.IsEnd()){
+			return false;
+		}
 	}
-	if(this._town_list.IsEnd()){
+	if(this._town_list.GetValue(candidateTown) == 0 ){
 		return false;
 	}
 	return AITown.PerformTownAction(candidateTown, size);
@@ -273,7 +298,7 @@ function Towns::BuildHeliPorts(){
 	while(AITown.GetAllowedNoise(candidateTown) == 0){
 		candidateTown = this._town_list.Next();
 	}
-	if(this._town_list.IsEnd()){
+	if(this._town_list.IsEnd() || this._town_list.GetValue(candidateTown) == 0){
 		return false;
 	}
 	local candidateTile = AITown.GetLocation(candidateTown);
