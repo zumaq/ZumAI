@@ -44,6 +44,8 @@ class Player
 	
 	function MorePunishPlayer();
 	
+	function CheckRoadBlockedTiles();
+	
 	function RemoveRoadBlockedTile(tile);
 	
 	function IsRoadBlockedTileSet(tile);
@@ -61,8 +63,7 @@ function Player::AddKarmaPoints(points){
 	}
 	
 	//calculate new _quotient based on the points gained.
-	local pointsSign = (points > 0) ? 1 : -1;
-	if (points > 0){
+	if (points < 0){
 		_quotient = _quotient * 1.2
 	} else {
 		_quotient = _quotient * 0.8
@@ -99,17 +100,15 @@ function Player::CheckAndPunish(){
 		return false;
 	}
 	
-	if (this._karma_points >= 100){
+	if (this._karma_points >= 100 || this._quotient > 1){
 		AILog.Info("Player has > 100 karma points, he gets light punish");
 		this.LightPunishPlayer();
 		return true;
 	}
 	
-	if (this._karma_points > 50){
-		AILog.Info("Player has > 50 karma points, he gets more punish");
-		this.MorePunishPlayer();
-		return true;
-	}
+	AILog.Info("Player has >50 & <100 karma points, he gets more punish");
+	this.MorePunishPlayer();
+	return true;
 }
 
 function Player::LightPunishPlayer(){
@@ -120,21 +119,29 @@ function Player::MorePunishPlayer(){
 	this._towns.DecideAndPunishMore(this._karma_points);
 }
 
-function Player::RemoveRoadBlockedTile(tile){
-	if (!Player.IsRoadBlockedTileSet(tile)) {
-		AILog.Info("This tile was already removed.");
-		return false;
+function Player::CheckRoadBlockedTiles(){
+	local count = this._road_blockade_tiles.len();
+	for(local i = 0; i < count; ++i) {
+		if (!AIRail.IsRailTile(this._road_blockade_tiles[i])) {
+			this.RemoveRoadBlockedTile(this._road_blockade_tiles[i]);
+		}
 	}
-	this._road_blocked_tile.pop(tile);
-	this._karma_points.AddKarmaPoints(30); //player has removed blockade so he deserves points.
+}
+
+function Player::RemoveRoadBlockedTile(tile){
+	local index = Player.IsRoadBlockedTileSet(tile);
+	AILog.Info("Removeing Tile: " + tile + " with index: " + index);
+	this._road_blockade_tiles.remove(index);
+	this.AddKarmaPoints(30); //player has removed blockade so he deserves points.
 	return true;
 }
 
 function Player::IsRoadBlockedTileSet(tile){
-	local count = this._road_blocked_tile.len();
+	local count = this._road_blockade_tiles.len();
 	for(local i = 0; i < count; ++i) {
-		if (_road_blocked_tile[i] == tile) {
-			return true;
+		//AILog.Info("Checking tiles: " + this._road_blockade_tiles[i] + " tile: " + tile);
+		if (this._road_blockade_tiles[i] == tile) {
+			return i;
 		}
 	}
 	return false;

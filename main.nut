@@ -1,6 +1,7 @@
 import("pathfinder.road", "RoadPathFinder", 4);
 import("pathfinder.rail", "RailPathFinder", 1);
 
+require("pathfinder.nut");
 require("player_manager.nut");
 require("road_blockade.nut");
 
@@ -33,14 +34,16 @@ function ZumAI::Start()
   
   findAndBuildRoad();
   BuildVehicles(3);
-  _players.assignTowns();
+  _players.AssignTowns();
   while (true) {
     if(this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
-    if(this.GetTick() % 450 == 0) _players.printPoints();
-	if(this.GetTick() % 500 == 0) _players.punishPlayersByKarmaPoints();
+	if(this.GetTick() % 10 == 0) CheckVehicles();
+	if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
+    //if(this.GetTick() % 450 == 0) _players.PrintPoints();
+	//if(this.GetTick() % 500 == 0) _players.PunishPlayersByKarmaPoints();
 	//if(this.GetTick() % 200 == 0) _players.testDepotDestroy();
 	//if(this.GetTick() % 200 == 0) _players.testSurroundCity();
-	//if(this.GetTick() % 300 == 0) _players.checkForRoadBlockadeOnPath(_path);
+	//if(this.GetTick() % 300 == 0) _players.CheckForRoadBlockadeOnPath(_path);
 	//if(this.GetTick() % 1500 == 0) VehicleTurnAround(3);
 	//if(this.GetTick() % 200 == 0) RoadBlockade.IsBlockadeInFrontOfDepo(depoTile);
 	//if(this.GetTick() % 5000 == 0) RoadBlockade.IsBlockadeOnPath(_path);
@@ -160,12 +163,12 @@ function findAndBuildRoad(){
 		  }else{
 		  AILog.Warning("Who did the blockade: " + RoadBlockade.WhoDidTheBlockade(par.GetTile(),0));
 		  AILog.Info("We cant build here, its a road and rail tile. PUNISH!!! ownerid: " + AITile.GetOwner(path.GetTile()));
-		  _players.addKarmaPoints(AITile.GetOwner(path.GetTile()),-20);
+		  _players.AddKarmaPoints(AITile.GetOwner(path.GetTile()),-20);
 		  local endTile = par.GetParent();
 		  while (AIRail.IsRailTile(endTile.GetTile())){
 			endTile = endTile.GetParent();
 		  }
-		  RoadBlockade.GetAroundBlockade(path.GetTile(), endTile.GetTile());
+		  //RoadBlockade.GetAroundBlockade(path.GetTile(), endTile.GetTile());
 		  }
 		}
       } else {
@@ -230,6 +233,15 @@ function BuildVehicles(number){
 			AIVehicle.StartStopVehicle(vehicle[i]);
 		  }
 	  }
+}
+
+function CheckVehicles(){
+	for(local i = 0; i<3; ++i){
+		local tile = this._players.CheckVehicleBlockade(vehicle[i]);
+		if (tile != null){
+			this._players.CheckForRoadBlockadeOnPath(_path, tile);
+		}
+	}
 }
 
 function VehicleTurnAround(number){

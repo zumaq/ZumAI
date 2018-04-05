@@ -27,7 +27,7 @@ class PlayerManager
 		this._roadBlockade = RoadBlockade();
 	}
 	
-	function addKarmaPoints(playerID, points){
+	function AddKarmaPoints(playerID, points){
 		if((playerID > (MAX_PLAYERS - 1))  || playerID < 0)	{
 			AILog.Info("PlayerID out of bounds.");
 			return false;
@@ -36,7 +36,7 @@ class PlayerManager
 		return true;
 	}
 	
-	function addKarmaPointsToAll(){
+	function AddKarmaPointsToAll(){
 		points = 20;
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list[i].AddKarmaPoints(points);
@@ -44,7 +44,7 @@ class PlayerManager
 		return true;
 	}
 	
-	function resetPlayerPoints(playerID){
+	function ResetPlayerPoints(playerID){
 		if((playerID > (MAX_PLAYERS - 1))  || playerID < 0)	{
 			AILog.Info("PlayerID out of bounds.");
 			return false;
@@ -53,9 +53,9 @@ class PlayerManager
 		return true;
 	}
 	
-	function assignTowns(){
+	function AssignTowns(){
 		local townlist = AITownList();
-		this.clearAllPlayersTownsRating();
+		this.ClearAllPlayersTownsRating();
 		for(local l = townlist.Begin(); !townlist.IsEnd(); l = townlist.Next()) {
 			for(local i = 0; i < MAX_PLAYERS; i++) {
 				if (-1 == AITown.GetRating(l, i)){
@@ -66,15 +66,38 @@ class PlayerManager
 		}
 	}
 	
-	function clearAllPlayersTownsRating(){
+	function ClearAllPlayersTownsRating(){
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list[i].ClearTowns();
 		}
 	}
+
+	function CheckVehicleBlockade(vehicleID){
+		if (AIVehicle.GetCurrentSpeed(vehicleID) == 0 && AIVehicle.GetState(vehicleID) == AIVehicle.VS_RUNNING){
+			AILog.Info("VEHICLE Stopped")
+			AIController.Sleep(20);
+			if (AIVehicle.GetCurrentSpeed(vehicleID) == 0 && AIVehicle.GetState(vehicleID) == AIVehicle.VS_RUNNING){
+				local tile = AIVehicle.GetLocation(vehicleID);
+				AILog.Info("VEHICLE RUNNING BUT STOPPED, THERE IS A BLOCKADE AROUND x: "
+						   + AIMap.GetTileX(tile) + " y: " + AIMap.GetTileY(tile));
+				AIVehicle.ReverseVehicle(vehicleID);
+				return tile;
+			}
+			return null;
+		}
+		return null;
+	}
 	
-	function punishPlayersByKarmaPoints(){
-		this.clearAllPlayersTownsRating();
-		this.assignTowns();
+	function CheckForDestroyedBlockades(){
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			this._player_list[i].CheckRoadBlockedTiles();
+			AILog.Info("Checking for destroyed blockades");
+		}
+	}
+	
+	function PunishPlayersByKarmaPoints(){
+		this.ClearAllPlayersTownsRating();
+		this.AssignTowns();
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			AILog.Info("Checking player with id: " + i);
 			if (AICompany.IsMine(this._player_list[i]._player_id)){
@@ -96,31 +119,69 @@ class PlayerManager
 		this._player_list[0]._towns.SurroundCityWithRails();
 	}
 	
-	function checkForRoadBlockadeOnPath(path){
+	function CheckIfArrayContainsTile(tileArray, tile){
+		local candidateTiles = array(0);
+		candidateTiles.push(tile + AIMap.GetTileIndex(0, 1));
+		candidateTiles.push(tile + AIMap.GetTileIndex(1, 0));
+		candidateTiles.push(tile + AIMap.GetTileIndex(0, -1));
+		candidateTiles.push(tile + AIMap.GetTileIndex(-1, 0));
+		// array.find() dosen't work dispite the documentation, i have to iterate throught both
+		for(local k=0; k<tileArray.len(); k++){
+			for(local i=0; i<candidateTiles.len(); i++){
+				if (tileArray[k] == candidateTiles[i]){
+					return candidateTiles[i];
+				}
+			}
+		}
+		return false;
+	}
+	
+	function CheckForRoadBlockadeOnPath(path, vehicleTile){
 		local array = this._roadBlockade.IsBlockadeOnPath(path);
 		if (array == false){
 			AILog.Info("There is no blockade");
 			return false;
 		}
+		local blockadeTile = this.CheckIfArrayContainsTile(array, vehicleTile)
+		if (blockadeTile == false){
+			AILog.Info("There is no blockade on that Tile, false alarm");
+			return false;
+		}
 		
-		local count = array.len();
 		local owner = null;
-		for(local i = 0; i<count; ++i) {
-			if (AIRoad.IsRoadTile(array[i] + AIMap.GetTileIndex(0, 1))){
-				owner = this._roadBlockade.WhoDidTheBlockade(array[i], 1);
-			} else {
-				owner = this._roadBlockade.WhoDidTheBlockade(array[i], 0);
-			}
-			AILog.Info("-----> Blockade on tile: " + array[i] + " owner: " + owner);
-			this.AddKarmaPoints(owner, -50);
-			this._player_list[owner]._road_blockade_tiles.push(array[i]);
-			
-			//this is just a test for a function if it works
-			//this._player_list[owner]._towns.DestroyDepoTileInCity();
+		if (AIRoad.IsRoadTile(blockadeTile + AIMap.GetTileIndex(0, 1))){
+			owner = this._roadBlockade.WhoDidTheBlockade(blockadeTile, 1);
+		} else {
+			owner = this._roadBlockade.WhoDidTheBlockade(blockadeTile, 0);
+		}
+		AILog.Info("-----> Blockade on tile: " + blockadeTile + " owner: " + owner);
+		if (this._player_list[owner].IsRoadBlockedTileSet(blockadeTile) == false){
+			this.AddKarmaPoints(owner, -30);
+			this._player_list[owner]._road_blockade_tiles.push(blockadeTile);
+			AILog.Info("Added tile to list " + blockadeTile + " owner: " + owner);
+			this._roadBlockade.GetAroundBlockedTile(blockadeTile);
 		}
 	}
 	
-	function printPoints(){
+	function CheckForDepoTileBlockade(depoTile){
+		local newDepo = this._roadBlockade.IsBlockadeInFrontOfDepo(depoTile);
+		local tileFront = AIRoad.GetRoadDepotFrontTile(depoTile);
+		if (newDepo == null){
+			return depoTile;
+		}
+		local owner = AITile.GetOwner(tileFront);
+		this.AddKarmaPoints(owner, -50);
+		this._player_list[owner]._road_blockade_tiles.push(tileFront);
+		if(newDepo == 0){
+			AILog.Info("new depot could't be built");
+			return depoTile;
+		} else {
+			AILog.Info("new depot built");
+			return newDepo;
+		}
+	}
+	
+	function PrintPoints(){
 		AILog.Info("Player karma points and town ratings---------------------------");
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			local points = this._player_list[i]._karma_points;

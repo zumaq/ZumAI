@@ -62,6 +62,13 @@ class RoadBlockade
     function IsBlockadeInFrontOfDepo(depoTile);
 
 	/**
+	* @brief GetAroundBlockedTile, figures out the starting and ending point for the blockade 
+	* and builds it
+	* @param tile, blocked tile
+	*/
+	function GetAroundBlockedTile(tile);
+	
+	/**
 	* @brief GetAroundBlockade, calls functions to get around the blockade.
 	* @param startTile, starting tile
 	* @param endTile, ending tile
@@ -248,7 +255,34 @@ function RoadBlockade::IsBlockadeInFrontOfDepo(depoTile){
 		return (newDepoTile + AIMap.GetTileIndex(-1,0));
 	}
 	AILog.Info("Couldn't find a good tile");
-	return null;
+	return 0;
+}
+
+function RoadBlockade::GetAroundBlockedTile(tile){
+	local startTile = tile;
+	local endTile = tile;
+	//determines what way the road goes and sets start and end tile
+	if (AIRoad.IsRoadTile(tile + AIMap.GetTileIndex(-1,0))){
+		do {
+			startTile = startTile + AIMap.GetTileIndex(-1,0);
+		} while (AIRail.IsRailTile(startTile))
+		do {
+			endTile = endTile + AIMap.GetTileIndex(1,0);
+		} while (AIRail.IsRailTile(endTile))
+	}
+	else {
+		do {
+			startTile = startTile + AIMap.GetTileIndex(0,-1);
+		} while (AIRail.IsRailTile(startTile))
+		do {
+			endTile = endTile + AIMap.GetTileIndex(0,1);
+		} while (AIRail.IsRailTile(endTile))
+	
+	}
+	AILog.Info("statTile x: " + AIMap.GetTileX(startTile)+ " y: " + AIMap.GetTileY(startTile));
+	AILog.Info("endTile x: " + AIMap.GetTileX(endTile)+ " y: " + AIMap.GetTileY(endTile));
+	local path = RoadBlockade.FindBestPath(startTile, endTile);
+	RoadBlockade.BuildRoad(path);
 }
 
 function RoadBlockade::GetAroundBlockade(startTile, endTile){
@@ -269,7 +303,15 @@ function RoadBlockade::TurnAroundVehicles(vehicles){
 }
 
 function RoadBlockade::BuildBridge(startTile, endTile){
-
+	if (AIRoad.IsRoadTile(startTile)) {
+		AITile.DemolishTile(startTile);
+	}
+	local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(startTile, endTile) + 1);
+	bridge_list.Valuate(AIBridge.GetMaxSpeed);
+	bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
+	if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), startTile, endTile)) {
+	  /* An error occured while building a bridge. TODO: handle it. */
+	}
 }
 
 function RoadBlockade::BuildTunnel(startTile, endTile){
@@ -278,14 +320,18 @@ function RoadBlockade::BuildTunnel(startTile, endTile){
 
 function RoadBlockade::BuildRoad(roadPath){
 	local path = roadPath;
-	lastTile = null;
+	local lastTile = null;
 	while (path != null) {
 		local par = path.GetParent();
 		
 		if (par != null) {
 		  lastTile = path.GetTile();
-			if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
-			  AILog.Info("Problem, cant build road, maybe it is built.");
+			if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1){
+				if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
+				  AILog.Info("Problem, cant build road, could be already built.");
+				}
+			} else {
+				RoadBlockade.BuildBridge(path.GetTile(), par.GetTile());
 			}
 		}
 		path = par;
@@ -295,16 +341,29 @@ function RoadBlockade::BuildRoad(roadPath){
 function RoadBlockade::FindBestPath(startTile, endTile){
 	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
 	
-	local pathfinder = RoadPathFinder();
-	pathfinder.cost.tile=1;
-	pathfinder.cost.no_existing_road=-10;
-	pathfinder.cost.turn=1;
+	local pathfinder = MyRoadPF();
+	pathfinder._cost_level_crossing = 20;
+	pathfinder._cost_slope = 5;
+	pathfinder._cost_tunnel_per_tile = 10;
+	pathfinder._max_bridge_length = 10;
+	pathfinder.cost.tile=10;
+	pathfinder.cost.no_existing_road=-20;
+	pathfinder.cost.turn=0;
+	pathfinder.cost.bridge_per_tile = -5;
 	
 	pathfinder.InitializePath([startTile], [endTile]);
+	local counter = 0;
 	local path = false;
-	while (path == false) {
-		path = pathfinder.FindPath(50);
+	while (path == false && counter < 150) {
+		path = pathfinder.FindPath(100);
+		counter++;
 		AIController.Sleep(1);
+	}
+	if (path != null && path != false) {
+		AILog.Info("Path found. (" + counter + ")");
+	} else {
+		AILog.Warning("Pathfinding failed.");
+		return false;
 	}
 	
 	if (path == null) {
