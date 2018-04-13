@@ -9,9 +9,11 @@
 class Towns
 {
 	_town_list = null;
+	_roadBlockade = null;
 	
 	constructor(){
 		this._town_list = AIList();
+		this._roadBlockade = RoadBlockade();
 	}
 	
 	/**
@@ -123,7 +125,27 @@ class Towns
 	*/
 	function SurroundCityWithRails();
 	
+	/**
+	* @brief CheckBlockadeCanBuild, checks if the blockade can be built, chcecks both directions and returns the better.
+	* @param tile, tile to check,
+	*/
+	function CheckBlockadeCanBuild(tile);
 	
+	/**
+	* @brief MakeBlockadePassable, this function sends the train to depot. 
+	*/
+	function MakeBlockadePassable();
+	
+	/**
+	* @brief ResumeStopedTrains, this function resumes the trains if built agains the player. 
+	*/
+	function ResumeStopedTrains();
+	
+	/**
+	* @brief BuildRoadBlockade, finds 2 best cities and build a blockade in the path. 
+	*/
+	function BuildRoadBlockade();
+		
 	/**
 	* @brief DecideAndPunish, this function decides what is the best way to punish the oponent
 	* @param points, points that the player has to decide how to punish, range(0-100-200)
@@ -543,6 +565,84 @@ function Towns::SurroundCityWithRails(){
 	this.BuildRailsFromArray(array);
 }
 
+function Towns::CheckBlockadeCanBuild(tile){
+	if (AITile.IsBuildable(tile + AIMap.GetTileIndex(0,-1))
+		&& AITile.GetSlope(tile + AIMap.GetTileIndex(0,-1)) == AITile.SLOPE_FLAT
+		&& AIRoad.AreRoadTilesConnected(tile, tile + AIMap.GetTileIndex(1, 0))
+		&& AIRoad.AreRoadTilesConnected(tile, tile + AIMap.GetTileIndex(-1, 0))) {
+		return 0;
+	}
+	if (AITile.IsBuildable(tile + AIMap.GetTileIndex(-1,0))
+		&& AITile.GetSlope(tile + AIMap.GetTileIndex(-1,0)) == AITile.SLOPE_FLAT
+		&& AIRoad.AreRoadTilesConnected(tile, tile + AIMap.GetTileIndex(0, 1))
+		&& AIRoad.AreRoadTilesConnected(tile, tile + AIMap.GetTileIndex(0, -1))) {
+		return 1;
+	}
+	return false;
+}
+
+function Towns::MakeBlockadePassable(){
+	this._roadBlockade.MakeBlockadePassable();
+}
+
+function Towns::ResumeStopedTrains(){
+	SortTownList();
+	local firstTown = this._town_list.Begin();
+	if(this._town_list.IsEnd() || this._town_list.GetValue(firstTown) == 0){
+		return false;
+	}
+	//there is no way that you can build in center tile,
+	//so this is here just to call resume trains if possible
+	this._roadBlockade.BuildRoadBlockade(AITown.GetLocation(firstTown), 1);
+}
+
+function Towns::BuildRoadBlockade(){
+	SortTownList();
+	local firstTown = this._town_list.Begin();
+	local secondTown = this._town_list.Next();
+	if(this._town_list.IsEnd() || this._town_list.GetValue(firstTown) == 0
+		|| this._town_list.GetValue(secondTown) == 0){
+		return false;
+	}
+	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+	AILog.Info("1: " + AITown.GetName(firstTown) + "2: " + AITown.GetName(secondTown));
+	local pathfinder = RoadPathFinder();
+	//pathfinder.cost.tile=1000;
+	pathfinder.cost.no_existing_road=2000;
+	pathfinder.InitializePath([AITown.GetLocation(firstTown)], [AITown.GetLocation(secondTown)]);
+	
+	local path = false;
+	while (path == false) {
+		path = pathfinder.FindPath(100);
+		AIController.Sleep(1);
+	}
+	if (path == null) {
+		/* No path was found. */
+		AILog.Error("pathfinder.FindPath return null");
+		// try to call if there are available locomotives in depots
+		// if there are not, the function will fail it is ok.
+		this._roadBlockade.BuildRoadBlockade(AITown.GetLocation(firstTown), 1);
+		return;
+	}
+	
+	local direction = false;
+	path = path.GetParent();
+	while (path != null) {
+		local par = path.GetParent();
+		if (par != null) {
+			direction = this.CheckBlockadeCanBuild(path.GetTile());
+			AILog.Info("tile x: " + AIMap.GetTileX(path.GetTile()) + "tile y: " + AIMap.GetTileY(path.GetTile()));
+			if (direction != false){
+				this._roadBlockade.BuildRoadBlockade(path.GetTile(),direction);
+				AILog.Info("!!Building blockade on tile x: " + AIMap.GetTileX(path.GetTile())
+							+ "tile y: " + AIMap.GetTileY(path.GetTile()));
+				break;
+			}
+		}
+		path = par;
+	}
+}
+
 function Towns::DecideAndPunish(points){
 	//points - 0 100 200 case has bad syntax
 	if (points > 140) {
@@ -568,16 +668,16 @@ function Towns::DecideAndPunish(points){
 
 function Towns::DecideAndPunishMore(points){
 	if (points > 120) {
-		Towns.BuildHeliPorts();
+		Towns.BuildRoadBlockade();
 		return;
 	} else if (points > 100) {
 		Towns.DestroyDepoTileInCity();
 		return;
 	} else if (points > 80) {
-		Towns.SurroundCityWithRails();
+		Towns.BuildHeliPorts();
 		return;
 	} else if (points > 60) {
-		//Towns.BuyRights();
+		Towns.SurroundCityWithRails();
 		return;
 	} else if (points > 40) {
 		//Towns.BribeTown();

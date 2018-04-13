@@ -32,16 +32,17 @@ function ZumAI::Start()
     }
   }
   
-  findAndBuildRoad();
-  BuildVehicles(3);
+  //findAndBuildRoad();
+  //BuildVehicles(3);
   _players.AssignTowns();
   while (true) {
     if(this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
-	if(this.GetTick() % 10 == 0) CheckVehicles();
-	if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
+	//(this.GetTick() % 10 == 0) CheckVehicles();
+	//if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
     //if(this.GetTick() % 450 == 0) _players.PrintPoints();
 	//if(this.GetTick() % 500 == 0) _players.PunishPlayersByKarmaPoints();
-	//if(this.GetTick() % 200 == 0) _players.testDepotDestroy();
+	if(this.GetTick() % 500 == 0) _players.testBuildBlockade();
+	//if(this.GetTick() % 400 == 0) _players.testRemoveBlockade();
 	//if(this.GetTick() % 200 == 0) _players.testSurroundCity();
 	//if(this.GetTick() % 300 == 0) _players.CheckForRoadBlockadeOnPath(_path);
 	//if(this.GetTick() % 1500 == 0) VehicleTurnAround(3);
@@ -102,7 +103,7 @@ function findAndBuildRoad(){
   local pathfinder = RoadPathFinder();
 
   /* Set the cost for making a turn extreme high. */
-  pathfinder.cost.turn = 5000;
+  //pathfinder.cost.turn = 5000;
 
   /* Give the source and goal tiles to the pathfinder. */
   pathfinder.InitializePath([AITown.GetLocation(townid_a)], [AITown.GetLocation(townid_b)]);

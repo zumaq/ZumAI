@@ -112,6 +112,17 @@ class RoadBlockade
 }
 
 function RoadBlockade::BuildRoadBlockade(buildTile, roadDirection){
+	if (this._available_trains.len() != 0) {
+		local locomotive = this._available_trains.pop();
+		AIVehicle.StartStopVehicle(locomotive);
+		AIController.Sleep(10);
+		AIVehicle.StartStopVehicle(locomotive);
+		
+		AILog.Info("Resuming the train that was already built");
+		this._blocking_trains.push(locomotive);
+		return true;
+	}
+	
 	local types = AIRailTypeList();
 	AIRail.SetCurrentRailType(types.Begin());
 	//1 is S to N, 0 is W to E
@@ -128,10 +139,16 @@ function RoadBlockade::BuildRoadBlockade(buildTile, roadDirection){
 }
 
 function RoadBlockade::MakeBlockadePassable(){
-	local locomotive = _blocking_trains.pop();
-	AIVehicle.StartStopVehicle(locomotive);
-	AIVehicle.SendVehicleToDepot(locomotive);
-	_available_trains.push(locomotive);
+	if(this._blocking_trains.len() == 0){
+		return;
+	}
+	local locomotive = this._blocking_trains.pop();
+	if (locomotive != null){
+		AILog.Info("Sending train to depot");
+		AIVehicle.StartStopVehicle(locomotive);
+		AIVehicle.SendVehicleToDepot(locomotive);
+		_available_trains.push(locomotive);
+	}
 }
 
 function RoadBlockade::BuildTrain(depoTile){
@@ -148,7 +165,7 @@ function RoadBlockade::BuildTrain(depoTile){
 	AIVehicle.StartStopVehicle(locomotive);
 	AIController.Sleep(10);
 	AIVehicle.StartStopVehicle(locomotive);
-	_blocking_trains.push(locomotive);
+	this._blocking_trains.push(locomotive);
 	return true;
 }
 

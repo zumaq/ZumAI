@@ -111,6 +111,14 @@ class PlayerManager
 		this._player_list[0]._towns.BuildHeliPorts();
 	}
 	
+	function testBuildBlockade(){
+		this._player_list[0]._towns.BuildRoadBlockade();
+	}
+	
+	function testRemoveBlockade(){
+		this._player_list[0]._towns.MakeBlockadePassable();
+	}
+	
 	function testDepotDestroy(){
 		this._player_list[0]._towns.DestroyDepoTileInCity();
 	}

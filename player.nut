@@ -96,7 +96,8 @@ function Player::ClearTowns(){
 
 function Player::CheckAndPunish(){
 	if (this._karma_points >= 150){
-		AILog.Info("Player has > 150 karma points, he is ok");
+		AILog.Info("Player has > 150 karma points, he is ok, removes blockade if any");
+		this._towns.MakeBlockadePassable();
 		return false;
 	}
 	
