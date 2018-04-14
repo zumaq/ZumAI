@@ -144,6 +144,89 @@ class PlayerManager
 		return false;
 	}
 	
+	function ArrayFind(array, node){
+		for(local i=0; i<array.len(); i++){
+			if (array[i] == node){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	function CheckForIndustry(tile){
+		//checking for industries in the range of the station and adds them to array
+		local industryArray = array(0);
+		for (local distance=1 ; distance <=4; distance++) {
+			local candidateTile = tile + AIMap.GetTileIndex(-distance,-distance);
+			local moves = distance * 2;
+			local industryID = 65535; //there is no industry if the ID is 65535
+			for (local l = 0; l < 4; l++){
+				for (local i = 0; i < moves; i++){
+					AILog.Info("CheckIndustry cycle: " + i +
+								"tile x: " + AIMap.GetTileX(candidateTile) + "tile y: " + AIMap.GetTileY(candidateTile));
+					industryID = AIIndustry.GetIndustryID(candidateTile);
+					if (industryID != 65535){
+						if (this.ArrayFind(industryArray, industryID) == false){
+							industryArray.push(industryID);
+						}
+					}
+					if(l == 0){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+					}
+					if(l == 1){
+						candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+					}
+					if(l == 2){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,-1);
+					}
+					if(l == 3){
+						candidateTile = candidateTile + AIMap.GetTileIndex(-1,0);
+					}
+				}
+			}
+		}
+		return industryArray;
+	}
+	
+	function CheckAndPunishStations(industry){
+		local tile = AIIndustry.GetLocation(industry);
+		for (local distance=1 ; distance <=7; distance++) {
+			local candidateTile = tile + AIMap.GetTileIndex(-distance,-distance);
+			local moves = distance * 2;
+			for (local l = 0; l < 4; l++){
+				for (local i = 0; i < moves; i++){
+					AILog.Info("CheckOtherStation cycle: " + i +
+								"tile x: " + AIMap.GetTileX(candidateTile) + "tile y: " + AIMap.GetTileY(candidateTile));
+					if (AITile.IsStationTile(candidateTile) && !AICompany.IsMine(AITile.GetOwner(candidateTile))
+						&& AIIndustry.GetDistanceManhattanToTile(industry, candidateTile) < 13){
+						AILog.Info("Found station at industry punish owner: " + AITile.GetOwner(candidateTile));
+						this.AddKarmaPoints(AITile.GetOwner(candidateTile), -50);
+					}
+					if(l == 0){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+					}
+					if(l == 1){
+						candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+					}
+					if(l == 2){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,-1);
+					}
+					if(l == 3){
+						candidateTile = candidateTile + AIMap.GetTileIndex(-1,0);
+					}
+				}
+			}
+		}
+	}
+	
+	function CheckForOtherIndustryStations(stationTile){
+		local industries = this.CheckForIndustry(stationTile);
+		local count = industries.len();
+		for(local i = 0; i < count; ++i) {
+			this.CheckAndPunishStations(industries[i]);
+		}
+	}
+	
 	function CheckForRoadBlockadeOnPath(path, vehicleTile){
 		local array = this._roadBlockade.IsBlockadeOnPath(path);
 		if (array == false){

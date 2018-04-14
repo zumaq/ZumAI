@@ -36,7 +36,11 @@ function ZumAI::Start()
   //BuildVehicles(3);
   _players.AssignTowns();
   while (true) {
-    if(this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
+    if (this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
+	//if (this.GetTick() % 10 == 0) AILog.Info(
+	//		AIIndustry.GetDistanceSquareToTile(AIIndustry.GetIndustryID(AIMap.GetTileIndex(41,33)), AIMap.GetTileIndex(39,35)));
+	
+	if (this.GetTick() % 200 == 0) CheckIndustry();
 	//(this.GetTick() % 10 == 0) CheckVehicles();
 	//if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
     //if(this.GetTick() % 450 == 0) _players.PrintPoints();
@@ -234,6 +238,21 @@ function BuildVehicles(number){
 			AIVehicle.StartStopVehicle(vehicle[i]);
 		  }
 	  }
+}
+
+function CheckIndustry(){
+	local stationID = AIStation.GetStationID(AIMap.GetTileIndex(36,22));
+	local industryID = AIIndustry.GetIndustryID(AIMap.GetTileIndex(36,36));
+	_players.CheckForOtherIndustryStations(AIMap.GetTileIndex(45,29));
+	AILog.Info(industryID);
+	//AILog.Info(AIIndustry.GetDistanceManhattanToTile(industryID, AIMap.GetTileIndex(45,36)));
+	/*for(local i=0; i<11; i++){
+		AILog.Info(AIStation.GetCargoWaiting(stationID,i));
+		if(AIStation.GetCargoRating(stationID, i)){
+			AILog.Info(AICargo.GetCargoLabel(i) + " " + AIStation.GetCargoRating(stationID, i));
+		}
+	}
+	AILog.Info(AIStation.GetCargoWaiting(stationID,1));*/
 }
 
 function CheckVehicles(){
