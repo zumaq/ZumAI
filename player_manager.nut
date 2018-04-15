@@ -189,6 +189,7 @@ class PlayerManager
 	}
 	
 	function CheckAndPunishStations(industry){
+		local array = array(0);
 		local tile = AIIndustry.GetLocation(industry);
 		for (local distance=1 ; distance <=7; distance++) {
 			local candidateTile = tile + AIMap.GetTileIndex(-distance,-distance);
@@ -200,7 +201,8 @@ class PlayerManager
 					if (AITile.IsStationTile(candidateTile) && !AICompany.IsMine(AITile.GetOwner(candidateTile))
 						&& AIIndustry.GetDistanceManhattanToTile(industry, candidateTile) < 13){
 						AILog.Info("Found station at industry punish owner: " + AITile.GetOwner(candidateTile));
-						this.AddKarmaPoints(AITile.GetOwner(candidateTile), -50);
+						array.push(candidateTile);
+						//this.AddKarmaPoints(AITile.GetOwner(candidateTile), -50);
 					}
 					if(l == 0){
 						candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
@@ -217,14 +219,53 @@ class PlayerManager
 				}
 			}
 		}
+		return array;
 	}
 	
 	function CheckForOtherIndustryStations(stationTile){
 		local industries = this.CheckForIndustry(stationTile);
 		local count = industries.len();
+		local tileArray = array(0);
 		for(local i = 0; i < count; ++i) {
-			this.CheckAndPunishStations(industries[i]);
+			tileArray.extend(this.CheckAndPunishStations(industries[i])); //test this
 		}
+	}
+	
+	function FindOtherBusStops(tile){
+		local array = array(0);
+		for (local distance=1 ; distance <=8; distance++) { // 4 + 4 coverage because of rail stations has 4 tile coverege
+			local candidateTile = tile + AIMap.GetTileIndex(-distance,-distance);
+			local moves = distance * 2;
+			for (local l = 0; l < 4; l++){
+				for (local i = 0; i < moves; i++){
+					AILog.Info("CheckOtherStation cycle: " + i +
+								"tile x: " + AIMap.GetTileX(candidateTile) + "tile y: " + AIMap.GetTileY(candidateTile));
+					if (AITile.IsStationTile(candidateTile) && !AICompany.IsMine(AITile.GetOwner(candidateTile))){
+						AILog.Info("Found bus station punish owner: " + AITile.GetOwner(candidateTile));
+						array.push(candidateTile);
+						//this.AddKarmaPoints(AITile.GetOwner(candidateTile), -50);
+					}
+					if(l == 0){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+					}
+					if(l == 1){
+						candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+					}
+					if(l == 2){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,-1);
+					}
+					if(l == 3){
+						candidateTile = candidateTile + AIMap.GetTileIndex(-1,0);
+					}
+				}
+			}
+		}
+		return array;
+	}
+	
+	function CheckForOtherTownStations(stationTile){
+		//add them to array and punish by that
+		local stationTiles = this.FindOtherBusStops(stationTile);
 	}
 	
 	function CheckForRoadBlockadeOnPath(path, vehicleTile){

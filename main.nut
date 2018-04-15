@@ -40,7 +40,8 @@ function ZumAI::Start()
 	//if (this.GetTick() % 10 == 0) AILog.Info(
 	//		AIIndustry.GetDistanceSquareToTile(AIIndustry.GetIndustryID(AIMap.GetTileIndex(41,33)), AIMap.GetTileIndex(39,35)));
 	
-	if (this.GetTick() % 200 == 0) CheckIndustry();
+	//if (this.GetTick() % 200 == 0) CheckIndustry();
+	if (this.GetTick() % 200 == 0) CheckBusStops();
 	//(this.GetTick() % 10 == 0) CheckVehicles();
 	//if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
     //if(this.GetTick() % 450 == 0) _players.PrintPoints();
@@ -238,6 +239,17 @@ function BuildVehicles(number){
 			AIVehicle.StartStopVehicle(vehicle[i]);
 		  }
 	  }
+}
+
+function CheckBusStops(){
+	local tile = AIMap.GetTileIndex(28,46);
+	local stationID = AIStation.GetStationID(tile);
+	AILog.Info("checking station" + stationID);
+	_players.CheckForOtherTownStations(tile)
+	/*if (AIStation.HasStationType(stationID, AIStation.STATION_BUS_STOP)){ // cant check this because its not mine station
+		AILog.Info("Has STation TYpe");
+		_players.CheckForOtherTownStations(tile)
+	}*/
 }
 
 function CheckIndustry(){
