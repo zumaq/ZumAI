@@ -2,7 +2,7 @@
  * @author Michal Zopp
  * @file player_manager.nut
  */
- 
+
 require("player.nut");
 require("road_blockade.nut");
 
@@ -13,20 +13,20 @@ require("road_blockade.nut");
   *  in the same company. Currently Maximum Number of companies that can be on a server is 15.
   */
 class PlayerManager
-{ 
-	
+{
+
 	static MAX_PLAYERS = 15; // The maximum that allows to join on one server is 15, but for the convenince
 							 // of the for cycles, because the id goes from 1 to 15.
 	_player_list = array(0);
 	_roadBlockade = null;
-	
+
 	constructor(){
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list.push(Player(i));
 		}
 		this._roadBlockade = RoadBlockade();
 	}
-	
+
 	function AddKarmaPoints(playerID, points){
 		if((playerID > (MAX_PLAYERS - 1))  || playerID < 0)	{
 			AILog.Info("PlayerID out of bounds.");
@@ -35,7 +35,7 @@ class PlayerManager
 		this._player_list[playerID].AddKarmaPoints(points);
 		return true;
 	}
-	
+
 	function AddKarmaPointsToAll(){
 		points = 20;
 		for(local i = 0; i < MAX_PLAYERS; i++) {
@@ -43,7 +43,7 @@ class PlayerManager
 		}
 		return true;
 	}
-	
+
 	function ResetPlayerPoints(playerID){
 		if((playerID > (MAX_PLAYERS - 1))  || playerID < 0)	{
 			AILog.Info("PlayerID out of bounds.");
@@ -52,7 +52,7 @@ class PlayerManager
 		this._player_list[playerID].ResetKarmaPoints();
 		return true;
 	}
-	
+
 	function AssignTowns(){
 		local townlist = AITownList();
 		this.ClearAllPlayersTownsRating();
@@ -65,7 +65,7 @@ class PlayerManager
 			}
 		}
 	}
-	
+
 	function ClearAllPlayersTownsRating(){
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list[i].ClearTowns();
@@ -87,14 +87,21 @@ class PlayerManager
 		}
 		return null;
 	}
-	
+
 	function CheckForDestroyedBlockades(){
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list[i].CheckRoadBlockedTiles();
 			AILog.Info("Checking for destroyed blockades");
 		}
 	}
-	
+
+  function CheckForDestroyedStationTiles(){
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			this._player_list[i].CheckStationTiles();
+			AILog.Info("Checking for destroyed stations");
+		}
+	}
+
 	function PunishPlayersByKarmaPoints(){
 		this.ClearAllPlayersTownsRating();
 		this.AssignTowns();
@@ -106,27 +113,27 @@ class PlayerManager
 			this._player_list[i].CheckAndPunish();
 		}
 	}
-	
+
 	function testHeliPorts(){
 		this._player_list[0]._towns.BuildHeliPorts();
 	}
-	
+
 	function testBuildBlockade(){
 		this._player_list[0]._towns.BuildRoadBlockade();
 	}
-	
+
 	function testRemoveBlockade(){
 		this._player_list[0]._towns.MakeBlockadePassable();
 	}
-	
+
 	function testDepotDestroy(){
 		this._player_list[0]._towns.DestroyDepoTileInCity();
 	}
-	
+
 	function testSurroundCity(){
 		this._player_list[0]._towns.SurroundCityWithRails();
 	}
-	
+
 	function CheckIfArrayContainsTile(tileArray, tile){
 		local candidateTiles = array(0);
 		candidateTiles.push(tile + AIMap.GetTileIndex(0, 1));
@@ -143,7 +150,7 @@ class PlayerManager
 		}
 		return false;
 	}
-	
+
 	function ArrayFind(array, node){
 		for(local i=0; i<array.len(); i++){
 			if (array[i] == node){
@@ -152,7 +159,7 @@ class PlayerManager
 		}
 		return false;
 	}
-	
+
 	function CheckForIndustry(tile){
 		//checking for industries in the range of the station and adds them to array
 		local industryArray = array(0);
@@ -187,7 +194,7 @@ class PlayerManager
 		}
 		return industryArray;
 	}
-	
+
 	function CheckAndPunishStations(industry){
 		local array = array(0);
 		local tile = AIIndustry.GetLocation(industry);
@@ -221,16 +228,23 @@ class PlayerManager
 		}
 		return array;
 	}
-	
+
 	function CheckForOtherIndustryStations(stationTile){
 		local industries = this.CheckForIndustry(stationTile);
-		local count = industries.len();
 		local tileArray = array(0);
-		for(local i = 0; i < count; ++i) {
+		for(local i = 0; i < industries.len(); ++i) {
 			tileArray.extend(this.CheckAndPunishStations(industries[i])); //test this
 		}
+    for (local i=0; i<tileArray.len(); i++){
+      local owner = AITile.GetOwner(stationTiles[i]);
+      if (this._player_list[i].IsStationTileSet(tileArray[i]) == false){
+        this.CheckTileAndOwner(owner, tileArray[i]);
+        this._player_list[owner]._station_tiles.push(tileArray[i]);
+        AILog.Info("Added tile to list " + tileArray[i] + " owner: " + owner);
+      }
+    }
 	}
-	
+
 	function FindOtherBusStops(tile){
 		local array = array(0);
 		for (local distance=1 ; distance <=8; distance++) { // 4 + 4 coverage because of rail stations has 4 tile coverege
@@ -238,8 +252,8 @@ class PlayerManager
 			local moves = distance * 2;
 			for (local l = 0; l < 4; l++){
 				for (local i = 0; i < moves; i++){
-					AILog.Info("CheckOtherStation cycle: " + i +
-								"tile x: " + AIMap.GetTileX(candidateTile) + "tile y: " + AIMap.GetTileY(candidateTile));
+					//AILog.Info("CheckOtherStation cycle: " + i +
+					//			"tile x: " + AIMap.GetTileX(candidateTile) + "tile y: " + AIMap.GetTileY(candidateTile));
 					if (AITile.IsStationTile(candidateTile) && !AICompany.IsMine(AITile.GetOwner(candidateTile))){
 						AILog.Info("Found bus station punish owner: " + AITile.GetOwner(candidateTile));
 						array.push(candidateTile);
@@ -262,12 +276,38 @@ class PlayerManager
 		}
 		return array;
 	}
-	
+
+  function CheckTileAndOwner(owner, tile){
+      if (AIRoad.IsRoadStationTile(tile)){
+        this.AddKarmaPoints(owner, -30);
+        AILog.Info("RoadStation Tile");
+        return;
+      }
+      if (AIRail.IsRailStationTile(tile)){
+        this.AddKarmaPoints(owner, -10);
+        AILog.Info("Rail Station Tile");
+        return;
+      }
+      if (AIAirport.IsAirportTile(tile)){
+        this.AddKarmaPoints(owner, -15);
+        AILog.Info("Airport Tile");
+        return;
+      }
+  }
+
 	function CheckForOtherTownStations(stationTile){
 		//add them to array and punish by that
 		local stationTiles = this.FindOtherBusStops(stationTile);
+    for (local i=0; i<stationTiles.len(); i++){
+      local owner = AITile.GetOwner(stationTiles[i]);
+      if (this._player_list[owner].IsStationTileSet(stationTiles[i]) == false){
+        this.CheckTileAndOwner(owner, stationTiles[i]);
+        this._player_list[owner]._station_tiles.push(stationTiles[i]);
+        AILog.Info("Added tile to list " + stationTiles[i] + " owner: " + owner);
+      }
+    }
 	}
-	
+
 	function CheckForRoadBlockadeOnPath(path, vehicleTile){
 		local array = this._roadBlockade.IsBlockadeOnPath(path);
 		if (array == false){
@@ -279,7 +319,7 @@ class PlayerManager
 			AILog.Info("There is no blockade on that Tile, false alarm");
 			return false;
 		}
-		
+
 		local owner = null;
 		if (AIRoad.IsRoadTile(blockadeTile + AIMap.GetTileIndex(0, 1))){
 			owner = this._roadBlockade.WhoDidTheBlockade(blockadeTile, 1);
@@ -294,7 +334,7 @@ class PlayerManager
 			this._roadBlockade.GetAroundBlockedTile(blockadeTile);
 		}
 	}
-	
+
 	function CheckForDepoTileBlockade(depoTile){
 		local newDepo = this._roadBlockade.IsBlockadeInFrontOfDepo(depoTile);
 		local tileFront = AIRoad.GetRoadDepotFrontTile(depoTile);
@@ -312,7 +352,7 @@ class PlayerManager
 			return newDepo;
 		}
 	}
-	
+
 	function PrintPoints(){
 		AILog.Info("Player karma points and town ratings---------------------------");
 		for(local i = 0; i < MAX_PLAYERS; i++) {
@@ -322,5 +362,5 @@ class PlayerManager
 			this._player_list[i]._towns.PrintTownRatings();
 		}
 	}
-	
+
 }

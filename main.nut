@@ -5,7 +5,7 @@ require("pathfinder.nut");
 require("player_manager.nut");
 require("road_blockade.nut");
 
-class ZumAI extends AIController 
+class ZumAI extends AIController
 {
   _players = null;
   counter = null;
@@ -15,7 +15,7 @@ class ZumAI extends AIController
   vehicle = array(6);
   train = null;
   _path = null;
-  
+
   constructor()
   {
 	_players = PlayerManager();
@@ -31,7 +31,7 @@ function ZumAI::Start()
       i = i + 1;
     }
   }
-  
+
   //findAndBuildRoad();
   //BuildVehicles(3);
   _players.AssignTowns();
@@ -39,14 +39,15 @@ function ZumAI::Start()
     if (this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
 	//if (this.GetTick() % 10 == 0) AILog.Info(
 	//		AIIndustry.GetDistanceSquareToTile(AIIndustry.GetIndustryID(AIMap.GetTileIndex(41,33)), AIMap.GetTileIndex(39,35)));
-	
+
 	//if (this.GetTick() % 200 == 0) CheckIndustry();
 	if (this.GetTick() % 200 == 0) CheckBusStops();
+  if (this.GetTick() % 500 == 0) _players.CheckForDestroyedStationTiles();
 	//(this.GetTick() % 10 == 0) CheckVehicles();
 	//if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
     //if(this.GetTick() % 450 == 0) _players.PrintPoints();
 	//if(this.GetTick() % 500 == 0) _players.PunishPlayersByKarmaPoints();
-	if(this.GetTick() % 500 == 0) _players.testBuildBlockade();
+	//if(this.GetTick() % 500 == 0) _players.testBuildBlockade();
 	//if(this.GetTick() % 400 == 0) _players.testRemoveBlockade();
 	//if(this.GetTick() % 200 == 0) _players.testSurroundCity();
 	//if(this.GetTick() % 300 == 0) _players.CheckForRoadBlockadeOnPath(_path);
@@ -54,7 +55,7 @@ function ZumAI::Start()
 	//if(this.GetTick() % 200 == 0) RoadBlockade.IsBlockadeInFrontOfDepo(depoTile);
 	//if(this.GetTick() % 5000 == 0) RoadBlockade.IsBlockadeOnPath(_path);
 	this.Sleep(1);
-  
+
 	while (AIEventController.IsEventWaiting()) {
 	  local e = AIEventController.GetNextEvent();
 	  switch (e.GetEventType()) {
@@ -64,7 +65,7 @@ function ZumAI::Start()
 		  AILog.Info("We have a crashed vehicle (" + v + ")");
 		  /* Handle the crashed vehicle */
 		  break;
-		  
+
 		case AIEvent.ET_COMPANY_NEW:
 		  local ec = AIEventCompanyNew.Convert(e);
 		  local c  = ec.GetCompanyID();
@@ -97,7 +98,7 @@ function findAndBuildRoad(){
   AILog.Info("Town: " + AITown.GetName(townid_a) + " comp_id 1, has rating: " + AITown.GetRating(townid_a,1));
   AILog.Info("Town: " + AITown.GetName(townid_a) + " comp_id 2, has rating: " + AITown.GetRating(townid_a,2));
 
-  
+
   /* Print the names of the towns we'll try to connect. */
   AILog.Info("Going to connect " + AITown.GetName(townid_a) + " to " + AITown.GetName(townid_b));
 
@@ -119,9 +120,9 @@ function findAndBuildRoad(){
     path = pathfinder.FindPath(100);
     this.Sleep(1);
   }
-  
+
   _path = path;
-  
+
   if (path == null) {
     /* No path was found. */
     AILog.Error("pathfinder.FindPath return null");
@@ -134,17 +135,17 @@ function findAndBuildRoad(){
   local first = 1;
   local depoBuilt = 0;
   local i=0;
-  
+
   /* If a path was found, build a road over it. */
   while (path != null) {
     local par = path.GetParent();
-	
+
     if (par != null) {
       lastTile = path.GetTile();
 	  //AIRoad.BuildRoadDepot(lastTile - AIMap.GetTileIndex(2,0), lastTile - AIMap.GetTileIndex(1,0));
 	  if(!depoBuilt){
 		if((AITile.GetSlope(lastTile) == AITile.SLOPE_FLAT) &&
-			(AITile.GetSlope(lastTile - AIMap.GetTileIndex(1,0)) == AITile.SLOPE_FLAT) && 
+			(AITile.GetSlope(lastTile - AIMap.GetTileIndex(1,0)) == AITile.SLOPE_FLAT) &&
 			  AIRoad.BuildRoadDepot(lastTile - AIMap.GetTileIndex(1,0), lastTile))
 		{
 		  /* Better depo placement and workarounds ! */
@@ -202,16 +203,16 @@ function findAndBuildRoad(){
     path = par;
   }
   AILog.Info("Done");
-  
+
   AITile.DemolishTile(firstTile);
   AITile.DemolishTile(lastTile);
-  
+
   if (AIRoad.BuildDriveThroughRoadStation(firstTile, firstTileNext, AIRoad.ROADVEHTYPE_BUS, AIStation.STATION_NEW)) {
 	AILog.Info("Station built in town!");
   } else {
 	AILog.Info("Station not built in town!");
   }
-  
+
   if (AIRoad.BuildDriveThroughRoadStation(lastTile, lastTileNext, AIRoad.ROADVEHTYPE_BUS, AIStation.STATION_NEW)) {
 	AILog.Info("Station built in town!");
   } else {
@@ -226,7 +227,7 @@ function BuildVehicles(number){
 
 	engineList.Valuate(AIEngine.GetCargoType)
 	engineList.KeepValue(0);
-		
+
 	  engineList.Valuate(AIEngine.GetMaxSpeed);
 	  engineList.Sort(AIList.SORT_BY_VALUE, true);
 	  local engine = engineList.Begin();
@@ -242,7 +243,7 @@ function BuildVehicles(number){
 }
 
 function CheckBusStops(){
-	local tile = AIMap.GetTileIndex(28,46);
+	local tile = AIMap.GetTileIndex(43,31);
 	local stationID = AIStation.GetStationID(tile);
 	AILog.Info("checking station" + stationID);
 	_players.CheckForOtherTownStations(tile)
@@ -290,7 +291,7 @@ function BuildWorkAround(tileIndex, parTileIndex){
 	pathfinder.cost.tile=5;
 	pathfinder.cost.no_existing_road=-1000;
 	pathfinder.cost.turn=1;
-	
+
 	pathfinder.InitializePath([tmpTile], [parTileIndex]);
 	  local path = false;
 	  while (path == false) {
@@ -301,18 +302,18 @@ function BuildWorkAround(tileIndex, parTileIndex){
 	  if (path == null) {
 		AILog.Error("pathfinder.FindPath return null");
 	  }
-	
+
 	firstTile = path.GetTile();
   local firstTileNext = path.GetParent().GetTile();
   lastTile = null;
   local lastTileNext = null;
   local depoBuilt = 0;
   local i=0;
-  
+
   /* If a path was found, build a road over it. */
   while (path != null) {
     local par = path.GetParent();
-	
+
     if (par != null) {
       lastTile = path.GetTile();
         if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
