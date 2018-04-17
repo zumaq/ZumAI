@@ -10,67 +10,67 @@ class Towns
 {
 	_town_list = null;
 	_roadBlockade = null;
-	
+
 	constructor(){
 		this._town_list = AIList();
 		this._roadBlockade = RoadBlockade();
 	}
-	
+
 	/**
 	* @brief AddTown, adds the town to the list of towns and ratings
 	* @param townId, id of the town you want to add
 	* @param rating, rating the town has
 	*/
 	function AddTown(townId, rating);
-	
+
 	/**
 	* @brief SortTownList, sorts the town list in order to pick the most for the
 	* rating and make decisions based on that.
 	*/
 	function SortTownList();
-	
+
 	/**
 	* @brief EmptyList, empties the list of towns and ratigins
 	*/
 	function EmptyList();
-	
+
 	/**
 	* @brief BuildTownStatue, this chooses the most rating from towns(where can be applied)
 	* and builds statue in town to increase rating.
 	*/
 	function BuildTownStatue();
-	
+
 	/**
 	* @brief BribeTown, this chooses the most rating from towns(where can be applied)
 	* and Bribes the town to increase rating.
 	*/
 	function BribeTown();
-	
+
 	/**
 	* @brief RebuildRoads, this chooses the most rating from towns(where can be applied)
 	* and funds the rebuilding of roads to increase rating and trap busses to enter city.
 	*/
 	function RebuildRoads();
-	
+
 	/**
 	* @brief FundBuildings, this chooses the most rating from towns(where can be applied)
 	* and funds the expanstion of buildings to increase rating.
 	*/
 	function FundBuildings();
-	
+
 	/**
 	* @brief BuyRights, this chooses the most rating from towns(where can be applied)
 	* and buys rights for building.
 	*/
 	function BuyRights();
-	
+
 	/**
 	* @brief Advertise, this chooses the most rating from towns(where can be applied)
 	* and funds a advertisement to increase rating.
 	* @param size, size of advertisement, 0 = SMALL, 1 = MEDIUM, 2 = LARGE
 	*/
 	function Advertise(size);
-	
+
 	/**
 	* @brief CheckAirportTiles, checks if there is a space around the center tile, with the distance,
 	* returns the buildable tile, if not returns the original center tile.
@@ -78,91 +78,102 @@ class Towns
 	* @param distance, distance from the center tile you want to check.
 	*/
 	function CheckAirportTiles(tile, distance);
-	
+
 	/**
-	* @brief BuildHeliPorts, build heliports in the most city rating a preson has to 
+	* @brief BuildHeliPorts, build heliports in the most city rating a preson has to
 	* avoid him getting to build airports.
 	*/
 	function BuildHeliPorts();
-	
+
 	/**
-	* @brief RemoveRoadBeforeDepot, removes the road from the tile you get it from every direction. 
+	* @brief RemoveRoadBeforeDepot, removes the road from the tile you get it from every direction.
 	* @param tile, tile you want to remove completely.
 	*/
 	function RemoveRoadBeforeDepot(tile);
-	
+
 	/**
-	* @brief BuildRailOnTile, builds a rail tile you cant build roads on a tile. 
+	* @brief BuildRailOnTile, builds a rail tile you cant build roads on a tile.
 	* @param tile, tile you want to build on.
 	*/
 	function BuildRailOnTile(tile);
-	
+
 	/**
-	* @brief DestroyDepoTileInCity, destroys and build rail in a tile that is right in front of depo. 
+	* @brief DestroyDepoTileInCity, destroys and build rail in a tile that is right in front of depo.
 	*/
 	function DestroyDepoTileInCity();
-	
+
 	/**
 	* @brief GetFourPointsAround, calculates 4 points around the city in the distance, return array
 	* @param tile, center tile of the city you want to surround
 	*/
 	function GetFourPointsAround(tile);
-	
+
 	/**
-	* @brief BuildRailsFromArray, builds a rail line from the 4 positions in array. 
+	* @brief BuildRailsFromArray, builds a rail line from the 4 positions in array.
 	* @param array, array you want to build from.
 	*/
 	function BuildRailsFromArray(array);
-	
+
 	/**
 	* @brief BuildRailsAroundCity, builds rails in a x and y lines
 	* @param tile, center tile of the city you want to surround
 	*/
 	function BuildRailsAroundCity(tile);
-	
+
 	/**
-	* @brief SurroundCityWithRails, surround city with rails, in order to stop the growth of the city. 
+	* @brief SurroundCityWithRails, surround city with rails, in order to stop the growth of the city.
 	*/
 	function SurroundCityWithRails();
-	
+
 	/**
 	* @brief CheckBlockadeCanBuild, checks if the blockade can be built, chcecks both directions and returns the better.
 	* @param tile, tile to check,
 	*/
 	function CheckBlockadeCanBuild(tile);
-	
+
 	/**
-	* @brief MakeBlockadePassable, this function sends the train to depot. 
+	* @brief MakeBlockadePassable, this function sends the train to depot.
 	*/
 	function MakeBlockadePassable();
-	
+
 	/**
-	* @brief ResumeStopedTrains, this function resumes the trains if built agains the player. 
+	* @brief ResumeStopedTrains, this function resumes the trains if built agains the player.
 	*/
 	function ResumeStopedTrains();
-	
+
 	/**
-	* @brief BuildRoadBlockade, finds 2 best cities and build a blockade in the path. 
+	* @brief BuildRoadBlockade, finds 2 best cities and build a blockade in the path.
 	*/
 	function BuildRoadBlockade();
-		
+
 	/**
 	* @brief DecideAndPunish, this function decides what is the best way to punish the oponent
 	* @param points, points that the player has to decide how to punish, range(0-100-200)
 	*/
 	function DecideAndPunish(points);
-	
+
 	/**
 	* @brief DecideAndPunishMore, this function decides and punishes the player, but more!
 	* @param points, points that the player has to decide how to punish, range(0-100-200)
 	*/
 	function DecideAndPunishMore(points);
-	
+
 	/**
 	* @brief PrintTownRaiting, prints the town raiting and town names for the
 	* particular player
 	*/
 	function PrintTownRatings();
+
+	/**
+	* @brief Save saves all the data and returns it
+	*/
+	function Save();
+
+	/**
+	* @brief Load loads all data from parameter
+	* @param data
+	*/
+	function Load(data);
 }
 
 function Towns::AddTown(townId, rating){
@@ -213,7 +224,7 @@ function Towns::BribeTown(){
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_BRIBE);
 }
-	
+
 function Towns::RebuildRoads(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
@@ -230,7 +241,7 @@ function Towns::RebuildRoads(){
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_ROAD_REBUILD);
 }
-	
+
 function Towns::FundBuildings(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
@@ -246,7 +257,7 @@ function Towns::FundBuildings(){
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_FUND_BUILDINGS);
 }
-	
+
 function Towns::BuyRights(){
 	SortTownList();
 	local candidateTown = this._town_list.Begin();
@@ -262,7 +273,7 @@ function Towns::BuyRights(){
 	}
 	return AITown.PerformTownAction(candidateTown, AITown.TOWN_ACTION_BUY_RIGHTS);
 }
-	
+
 function Towns::Advertise(size){
 	if (size != 0 || size != 1 || size != 2){
 		return false;
@@ -337,7 +348,7 @@ function Towns::CheckDepoTileInCity(tile, distance){
 	local moves = distance * 2;
 	for (local l = 0; l < 4; l++){
 		for (local i = 0; i < moves; i++){
-			if (AIRoad.IsRoadDepotTile(candidateTile) 
+			if (AIRoad.IsRoadDepotTile(candidateTile)
 				&& !AICompany.IsMine(AITile.GetOwner(candidateTile))
 				&& !AIRail.IsRailTile(AIRoad.GetRoadDepotFrontTile(candidateTile))){
 				return candidateTile;
@@ -385,7 +396,7 @@ function Towns::DestroyDepoTileInCity(){
 	if(this._town_list.IsEnd() || this._town_list.GetValue(candidateTown) == 0){
 		return false;
 	}
-	
+
 	local depoTile = AITown.GetLocation(candidateTown);
 	for (local l=0; depoTile == AITown.GetLocation(candidateTown) && l < 2; l++){
 		AILog.Info("Checking town with name: " + AITown.GetName(candidateTown));
@@ -401,7 +412,7 @@ function Towns::DestroyDepoTileInCity(){
 			}
 		}
 	}
-	
+
 	if (depoTile != AITown.GetLocation(candidateTown)){
 		local tile = AIRoad.GetRoadDepotFrontTile(depoTile);
 		AILog.Info("Tile in front of the Depot x: " + AIMap.GetTileX(tile) + " y: " + AIMap.GetTileY(tile));
@@ -450,7 +461,7 @@ function Towns::BuildRailsFromArray(array){
 	local types = AIRailTypeList();
 	AIRail.SetCurrentRailType(types.Begin());
 	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
-	
+
 	for (local i=0; i<4; ++i){
 		local tile_a = array[i];
 		local tile_b = null;
@@ -473,7 +484,7 @@ function Towns::BuildRailsFromArray(array){
 								  [tile_b, tile_b + AIMap.GetTileIndex(-1, 0), tile_b + AIMap.GetTileIndex(1, 0),
 								  tile_b + AIMap.GetTileIndex(0, -1), tile_b + AIMap.GetTileIndex(0, 1)]);*/
 		pathfinder.InitializePath([tile_a], [tile_b]);
-		
+
 		local path = false;
 		while (path == false) {
 			path = pathfinder.FindPath(50);
@@ -484,7 +495,7 @@ function Towns::BuildRailsFromArray(array){
 			AILog.Error("pathfinder.FindPath return null");
 			continue;
 		}
-		
+
 		path = path.GetParent();
 		while (path != null) {
 			local par = path.GetParent();
@@ -507,7 +518,7 @@ function Towns::BuildRailsAroundCity(tile){
 	for (local l=0; l<2; l++){
 		if (l == 0){
 			candidateTile = tile + AIMap.GetTileIndex(0, -distance);
-		} 
+		}
 		if (l == 1){
 			candidateTile = tile + AIMap.GetTileIndex(-distance, 0);
 		}
@@ -553,15 +564,15 @@ function Towns::SurroundCityWithRails(){
 	if(this._town_list.IsEnd() || this._town_list.GetValue(candidateTown) == 0){
 		return false;
 	}
-	
+
 	//this.BuildRailsAroundCity(candidateTile);
 	local array = GetFourPointsAround(candidateTile);
-	
+
 	if(array == false){
 		AILog.Info("Couldn't find a path");
 		return false;
 	}
-	
+
 	this.BuildRailsFromArray(array);
 }
 
@@ -610,7 +621,7 @@ function Towns::BuildRoadBlockade(){
 	//pathfinder.cost.tile=1000;
 	pathfinder.cost.no_existing_road=2000;
 	pathfinder.InitializePath([AITown.GetLocation(firstTown)], [AITown.GetLocation(secondTown)]);
-	
+
 	local path = false;
 	while (path == false) {
 		path = pathfinder.FindPath(100);
@@ -624,7 +635,7 @@ function Towns::BuildRoadBlockade(){
 		this._roadBlockade.BuildRoadBlockade(AITown.GetLocation(firstTown), 1);
 		return;
 	}
-	
+
 	local direction = false;
 	path = path.GetParent();
 	while (path != null) {
@@ -689,4 +700,15 @@ function Towns::PrintTownRatings(){
 	for(local l = this._town_list.Begin(); !this._town_list.IsEnd(); l = this._town_list.Next()) {
 		AILog.Info("- -> Town Name: " + AITown.GetName(l) + " has rating: " + this._town_list.GetValue(l));
 	}
+}
+
+function Towns::Save(){
+	local data = {
+		road_blockade = this._roadBlockade.Save()
+	};
+	return data;
+}
+
+function Towns::Load(data){
+	if(data.rawin("road_blockade")) this._roadBlockade.Load(data["road_blockade"]);
 }

@@ -363,4 +363,23 @@ class PlayerManager
 		}
 	}
 
+	function Save(){
+		local playerList = array(0);
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			routes.push(this._player_list[i].Save());
+		}
+		local data = {
+			players = playerList
+		};
+
+		return data;
+	}
+
+	function Load(data){
+		if ("players" in data){
+			for (local i=0; i < MAX_PLAYERS; i++) {
+					this._player_list.push(Player.Load());
+			}
+		}
+	}
 }

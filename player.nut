@@ -61,6 +61,17 @@ class Player
 	function IsRoadBlockedTileSet(tile);
 
   function IsStationTileSet(tile);
+
+	/**
+	* @brief Save saves all the data and returns it
+	*/
+	function Save();
+
+	/**
+	* @brief Load loads all data from parameter
+	* @param data
+	*/
+	function Load(data);
 }
 
 function Player::AddKarmaPoints(points){
@@ -221,4 +232,23 @@ function Player::IsStationTileSet(tile){
 		}
 	}
 	return false;
+}
+
+function Player::Save(){
+	local data = {
+		karma_points = _karma_points,
+		road_blocked_tiles = _road_blocked_tile,
+		station_blocked_tiles = _station_tiles,
+		towns = _towns.Save()
+	};
+	return data;
+}
+
+function Player::Load(data){
+	this._karma_points = data["karma_points"];
+	this._road_blocked_tile = data["road_blocked_tiles"];
+	this._station_tiles = data["station_blocked_tiles"];
+	if(data.rawin("towns")) this._towns.Load(data["towns"]);
+
+	return this;
 }

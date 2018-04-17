@@ -10,29 +10,29 @@ class RoadBlockade
 {
 	_available_trains=array(0);
 	_blocking_trains=array(0);
-	
+
 	constructor(){
 	}
-	
+
 	/**
 	* @brief BuildRoadBlockade, builds a interception to prevent cars from going in that road.
 	* @param buildTile, the tile where you want to build the interception.
-	* @param roadDirection, direction in which you want to build, 1 for x-axes, 0 for y-axes. 
+	* @param roadDirection, direction in which you want to build, 1 for x-axes, 0 for y-axes.
 	*/
 	function BuildRoadBlockade(buildTile, roadDirection);
-	
+
 	/**
 	* @brief BuildTrain, builds a train in given depo
 	* @param depoTile, tile of the depo where you build the Train
 	*/
 	function BuildTrain(depoTile);
-	
+
 	/**
 	* @brief MakeBlockadePassable, makes the alredy built blockade passable again
 	* //TODO: make so that the train for the person with good karma gets sent to depo.
 	*/
 	function MakeBlockadePassable();
-	
+
 	/**
 	* @brief WhoDidTheBlockade, decited who did the blockade based on depo/tracks.
 	* Returns false if it could no be decited.
@@ -40,20 +40,20 @@ class RoadBlockade
 	* @param roadDirection, the direction where the road goes, so it can be determined.
 	*/
 	function WhoDidTheBlockade(tile, roadDirection);
-	
+
     /**
     * @brief IsBlockadeOnPath, finds and returns tiles if there is a blockade on given path
     * if not return false.
     * @param path, the path you want to check
     */
     function IsBlockadeOnPath(path);
-	
+
 	/**
     * @brief FindGoodRoadTile, finds out where is the the nearest road and returns it;
     * @param tile, tile where is original depo
     */
 	function FindGoodRoadTile(tile);
-	
+
 	/**
     * @brief  IsBlockadeInFrontOfDepo, finds out if there is a tile in front of depo, builds
 	* another one and decreese karma points
@@ -62,53 +62,64 @@ class RoadBlockade
     function IsBlockadeInFrontOfDepo(depoTile);
 
 	/**
-	* @brief GetAroundBlockedTile, figures out the starting and ending point for the blockade 
+	* @brief GetAroundBlockedTile, figures out the starting and ending point for the blockade
 	* and builds it
 	* @param tile, blocked tile
 	*/
 	function GetAroundBlockedTile(tile);
-	
+
 	/**
 	* @brief GetAroundBlockade, calls functions to get around the blockade.
 	* @param startTile, starting tile
 	* @param endTile, ending tile
 	*/
 	function GetAroundBlockade(startTile, endTile);
-	
+
 	/**
 	* @brief TurnAroundVehicles, this forces all the vehicles in param to turn around
 	* and get over the potential blockade.
 	* @param vehicles, list of vehicles you want to turn around
 	*/
 	function TurnAroundVehicles(vehicles);
-	
+
 	/**
 	* @brief BuildBridge
 	* @param startTile
 	* @param endTile
 	*/
 	function BuildBridge(startTile, endTile);
-	
+
 	/**
 	* @brief BuildTunnel
 	* @param startTile
 	* @param endTile
 	*/
 	function BuildTunnel(startTile, endTile);
-	
+
 	/**
 	* @brief BuildRoad, builds the road based on the path
 	* @param path, best path
 	*/
 	function BuildRoad(path);
-	
+
 	/**
 	* @brief FindBestPath Finds the best path around the blockade
 	* @param startTile, first tile
 	* @param endTile, last tile
 	*/
 	function FindBestPath(startTile, endTile);
-	
+
+	/**
+	* @brief Save saves all the data and returns it
+	*/
+	function Save();
+
+	/**
+	* @brief Load loads all data from parameter
+	* @param data
+	*/
+	function Load(data);
+
 }
 
 function RoadBlockade::BuildRoadBlockade(buildTile, roadDirection){
@@ -117,12 +128,12 @@ function RoadBlockade::BuildRoadBlockade(buildTile, roadDirection){
 		AIVehicle.StartStopVehicle(locomotive);
 		AIController.Sleep(10);
 		AIVehicle.StartStopVehicle(locomotive);
-		
+
 		AILog.Info("Resuming the train that was already built");
 		this._blocking_trains.push(locomotive);
 		return true;
 	}
-	
+
 	local types = AIRailTypeList();
 	AIRail.SetCurrentRailType(types.Begin());
 	//1 is S to N, 0 is W to E
@@ -160,7 +171,7 @@ function RoadBlockade::BuildTrain(depoTile){
 	vl.Valuate(AIEngine.IsWagon);
 	vl.KeepValue(0);
 	local locomotive_engine = vl.Begin();
-	
+
 	local locomotive = AIVehicle.BuildVehicle(depoTile, locomotive_engine);
 	AIVehicle.StartStopVehicle(locomotive);
 	AIController.Sleep(10);
@@ -254,11 +265,11 @@ function RoadBlockade::IsBlockadeInFrontOfDepo(depoTile){
 		AILog.Info("There is no blockade in front of depot tile");
 		return null;
 	}
-	
+
 	local roadTile = RoadBlockade.FindGoodRoadTile(depoTile);
 	AILog.Info("Found Road Tile x: " + AIMap.GetTileX(roadTile) + " y: " + AIMap.GetTileY(roadTile));
 	local newDepoTile = roadTile;
-	
+
 	if (AIRoad.BuildRoadDepot(newDepoTile + AIMap.GetTileIndex(0,1), roadTile)){
 		return (newDepoTile + AIMap.GetTileIndex(0,1));
 	}
@@ -294,7 +305,7 @@ function RoadBlockade::GetAroundBlockedTile(tile){
 		do {
 			endTile = endTile + AIMap.GetTileIndex(0,1);
 		} while (AIRail.IsRailTile(endTile))
-	
+
 	}
 	AILog.Info("statTile x: " + AIMap.GetTileX(startTile)+ " y: " + AIMap.GetTileY(startTile));
 	AILog.Info("endTile x: " + AIMap.GetTileX(endTile)+ " y: " + AIMap.GetTileY(endTile));
@@ -340,7 +351,7 @@ function RoadBlockade::BuildRoad(roadPath){
 	local lastTile = null;
 	while (path != null) {
 		local par = path.GetParent();
-		
+
 		if (par != null) {
 		  lastTile = path.GetTile();
 			if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1){
@@ -357,7 +368,7 @@ function RoadBlockade::BuildRoad(roadPath){
 
 function RoadBlockade::FindBestPath(startTile, endTile){
 	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
-	
+
 	local pathfinder = MyRoadPF();
 	pathfinder._cost_level_crossing = 20;
 	pathfinder._cost_slope = 5;
@@ -367,7 +378,7 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 	pathfinder.cost.no_existing_road=-20;
 	pathfinder.cost.turn=0;
 	pathfinder.cost.bridge_per_tile = -5;
-	
+
 	pathfinder.InitializePath([startTile], [endTile]);
 	local counter = 0;
 	local path = false;
@@ -382,10 +393,40 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 		AILog.Warning("Pathfinding failed.");
 		return false;
 	}
-	
+
 	if (path == null) {
 		AILog.Error("pathfinder.FindPath return null");
 		return false;
 	}
 	return path;
+}
+
+function RoadBlockade::Save(){
+	local data = {
+		available_trains = array(0),
+		blocking_trains = array(0)
+	};
+	if(_available_trains.len() != 0){
+		data.available_trains = _available_trains;
+	}
+	if(_blocking_trains.len() != 0){
+		blocking_trains = _blocking_trains;
+	}
+	return data;
+}
+
+function RoadBlockade::Load(data){
+	this._available_trains = data.available_trains;
+	this._blocking_trains = data.blocking_trains;
+	/*
+	if("available_trains" in data){
+		for (local i=0; i < data.available_trains.len(); i++) {
+			this._available_trains.push(available_trains[i]);
+		}
+	}
+	if("blocking_trains" in data){
+		for (local i=0; i < data.blocking_trains.len(); i++) {
+			this._blocking_trains.push(blocking_trains[i]);
+		}
+	}*/
 }
