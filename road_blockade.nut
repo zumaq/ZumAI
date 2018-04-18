@@ -373,11 +373,12 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 	pathfinder._cost_level_crossing = 20;
 	pathfinder._cost_slope = 5;
 	pathfinder._cost_tunnel_per_tile = 10;
-	pathfinder._max_bridge_length = 10;
+	pathfinder._max_bridge_length = 4;
+	pathfinder.cost.max_cost = 800;
 	pathfinder.cost.tile=10;
-	pathfinder.cost.no_existing_road=-20;
-	pathfinder.cost.turn=0;
-	pathfinder.cost.bridge_per_tile = -5;
+	pathfinder.cost.no_existing_road=-70;
+	pathfinder.cost.turn=10;
+	pathfinder.cost.bridge_per_tile = -30;
 
 	pathfinder.InitializePath([startTile], [endTile]);
 	local counter = 0;
@@ -416,17 +417,9 @@ function RoadBlockade::Save(){
 }
 
 function RoadBlockade::Load(data){
-	this._available_trains = data.available_trains;
-	this._blocking_trains = data.blocking_trains;
-	/*
-	if("available_trains" in data){
-		for (local i=0; i < data.available_trains.len(); i++) {
-			this._available_trains.push(available_trains[i]);
-		}
-	}
-	if("blocking_trains" in data){
-		for (local i=0; i < data.blocking_trains.len(); i++) {
-			this._blocking_trains.push(blocking_trains[i]);
-		}
-	}*/
+	local blockade = RoadBlockade();
+	blockade._available_trains = data.available_trains;
+	blockade._blocking_trains = data.blocking_trains;
+	
+	return blockade;
 }

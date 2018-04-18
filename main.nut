@@ -32,8 +32,8 @@ function ZumAI::Start()
     }
   }
 
-  //findAndBuildRoad();
-  //BuildVehicles(3);
+  findAndBuildRoad();
+  BuildVehicles(3);
   _players.AssignTowns();
   while (true) {
     if (this.GetTick() % 100 == 0)AILog.Info("I am a very new AI with a ticker called ZumAI and I am at tick " + this.GetTick());
@@ -41,9 +41,10 @@ function ZumAI::Start()
 	//		AIIndustry.GetDistanceSquareToTile(AIIndustry.GetIndustryID(AIMap.GetTileIndex(41,33)), AIMap.GetTileIndex(39,35)));
 
 	//if (this.GetTick() % 200 == 0) CheckIndustry();
-	if (this.GetTick() % 200 == 0) CheckBusStops();
-  if (this.GetTick() % 500 == 0) _players.CheckForDestroyedStationTiles();
-	//(this.GetTick() % 10 == 0) CheckVehicles();
+	//if (this.GetTick() % 200 == 0) CheckBusStops();
+    //if (this.GetTick() % 500 == 0) _players.CheckForDestroyedStationTiles();
+	if (this.GetTick() % 10 == 0) CheckVehicles();
+	//if (this.GetTick() % 100 == 0) _players.PrintStations();
 	//if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
     //if(this.GetTick() % 450 == 0) _players.PrintPoints();
 	//if(this.GetTick() % 500 == 0) _players.PunishPlayersByKarmaPoints();
@@ -175,6 +176,7 @@ function findAndBuildRoad(){
 		  while (AIRail.IsRailTile(endTile.GetTile())){
 			endTile = endTile.GetParent();
 		  }
+		  RoadBlockade.GetAroundBlockedTile(par.GetTile());
 		  //RoadBlockade.GetAroundBlockade(path.GetTile(), endTile.GetTile());
 		  }
 		}
@@ -243,7 +245,7 @@ function BuildVehicles(number){
 }
 
 function CheckBusStops(){
-	local tile = AIMap.GetTileIndex(43,31);
+	local tile = AIMap.GetTileIndex(21,44);
 	local stationID = AIStation.GetStationID(tile);
 	AILog.Info("checking station" + stationID);
 	_players.CheckForOtherTownStations(tile)
@@ -328,13 +330,19 @@ function BuildWorkAround(tileIndex, parTileIndex){
 
 function ZumAI::Save()
 {
-  local table = {counter_value = this.counter};
+  AILog.Warning("Game being saved.");
+  local players = this._players.Save();
+  local table = {
+		player_manager = players
+	};
   return table;
 }
 
 function ZumAI::Load(version, data)
 {
-  if (data.rawin("counter_value")) {
-    this.counter = data.rawget("counter_value");
+  AILog.Warning("Loading data.");
+  if (data.rawin("player_manager")) {
+	_players = PlayerManager.Load(data.rawget("player_manager"));
   }
+  _players.PrintStations();
 }

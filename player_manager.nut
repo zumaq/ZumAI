@@ -14,13 +14,13 @@ require("road_blockade.nut");
   */
 class PlayerManager
 {
-
+	_player_list = null;
+	_roadBlockade = null;
 	static MAX_PLAYERS = 15; // The maximum that allows to join on one server is 15, but for the convenince
 							 // of the for cycles, because the id goes from 1 to 15.
-	_player_list = array(0);
-	_roadBlockade = null;
 
 	constructor(){
+		this._player_list = array(0);
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			this._player_list.push(Player(i));
 		}
@@ -345,7 +345,7 @@ class PlayerManager
 		this.AddKarmaPoints(owner, -50);
 		this._player_list[owner]._road_blockade_tiles.push(tileFront);
 		if(newDepo == 0){
-			AILog.Info("new depot could't be built");
+			AILog.Info("new depot couldn't be built");
 			return depoTile;
 		} else {
 			AILog.Info("new depot built");
@@ -358,15 +358,27 @@ class PlayerManager
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			local points = this._player_list[i]._karma_points;
 			local id = this._player_list[i]._player_id;
-			AILog.Info("Player with id: " + id + ", has karma of: " + points + ".");
+			AILog.Info("Player with id: " + id + ", has karma of: " + points + ". " + this._player_list[i]._station_tiles.len());
 			this._player_list[i]._towns.PrintTownRatings();
+			for(local k=0; k < this._player_list[i]._station_tiles.len(); k++){
+				AILog.Info("Station tile: " + this._player_list[i]._station_tiles[k]);
+			}
+		}
+	}
+	
+	function PrintStations(){
+		for(local i = 0; i < MAX_PLAYERS; i++) {
+			AILog.Info("Player with id: " + this._player_list[i]._player_id + ". ");
+			for(local k=0; k < this._player_list[i]._station_tiles.len(); k++){
+				AILog.Info("------> Station tile: " + this._player_list[i]._station_tiles[k]);
+			}
 		}
 	}
 
 	function Save(){
 		local playerList = array(0);
 		for(local i = 0; i < MAX_PLAYERS; i++) {
-			routes.push(this._player_list[i].Save());
+			playerList.push(this._player_list[i].Save());
 		}
 		local data = {
 			players = playerList
@@ -376,10 +388,14 @@ class PlayerManager
 	}
 
 	function Load(data){
+		local playerManager = PlayerManager();
+		playerManager._player_list.clear();
 		if ("players" in data){
-			for (local i=0; i < MAX_PLAYERS; i++) {
-					this._player_list.push(Player.Load());
+			for (local i=0; i < 15; i++) {
+				local player = Player.Load(data.players[i]);
+				playerManager._player_list.push(player);
 			}
 		}
+		return playerManager;
 	}
 }

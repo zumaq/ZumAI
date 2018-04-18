@@ -619,7 +619,7 @@ function Towns::BuildRoadBlockade(){
 	AILog.Info("1: " + AITown.GetName(firstTown) + "2: " + AITown.GetName(secondTown));
 	local pathfinder = RoadPathFinder();
 	//pathfinder.cost.tile=1000;
-	pathfinder.cost.no_existing_road=2000;
+	pathfinder.cost.no_existing_road=20000;
 	pathfinder.InitializePath([AITown.GetLocation(firstTown)], [AITown.GetLocation(secondTown)]);
 
 	local path = false;
@@ -710,5 +710,9 @@ function Towns::Save(){
 }
 
 function Towns::Load(data){
-	if(data.rawin("road_blockade")) this._roadBlockade.Load(data["road_blockade"]);
+	local towns = Towns();
+	if(data.rawin("road_blockade")){
+		towns._roadBlockade.Load(data["road_blockade"]);
+	}
+	return towns;
 }

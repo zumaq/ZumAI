@@ -15,10 +15,10 @@ class Player
 	static MAX_KARMA_POINTS = 200; // Maximum points you can have
 	static DEFAULT_KARMA_POINTS = 100; // Default poins for karma
 	static MIN_KARMA_POINTS = 0; // Minimum points you can have
-	_player_id=null;
+	_player_id = null;
 	_road_blockade_tiles = null; //this is a array of blocked tiles by the particular player
-  _station_tiles = null; //this is an array of stations near mine, that are getting my passangers !
-	_karma_points=null;
+    _station_tiles = null; //this is an array of stations near mine, that are getting my passangers !
+	_karma_points = null;
 	_quotient = null; //quotient that represents how much the player gets points, depending
 					  //on previous actions.
 	_towns=null;
@@ -26,7 +26,7 @@ class Player
 	constructor(id){
 		this._player_id = id;
 		this._road_blockade_tiles = array(0);
-    this._station_tiles = array(0);
+        this._station_tiles = array(0);
 		this._towns = Towns();
 		this._karma_points = DEFAULT_KARMA_POINTS;
 		_quotient = 1;
@@ -38,7 +38,7 @@ class Player
 
 	function AddRoadBlockedTile(tile);
 
-  function AddStationTile(tile);
+    function AddStationTile(tile);
 
 	function AddTown(townId);
 
@@ -50,17 +50,17 @@ class Player
 
 	function CheckRoadBlockedTiles();
 
-  function CheckStationTiles();
+	function CheckStationTiles();
 
-  function CalculateKarmaPointsForStation(tile);
+	function CalculateKarmaPointsForStation(tile);
 
 	function RemoveRoadBlockedTile(tile);
 
-  function RemoveStationTile(tile);
+	function RemoveStationTile(tile);
 
 	function IsRoadBlockedTileSet(tile);
 
-  function IsStationTileSet(tile);
+	function IsStationTileSet(tile);
 
 	/**
 	* @brief Save saves all the data and returns it
@@ -235,20 +235,24 @@ function Player::IsStationTileSet(tile){
 }
 
 function Player::Save(){
+	local townsList = this._towns.Save();
 	local data = {
-		karma_points = _karma_points,
-		road_blocked_tiles = _road_blocked_tile,
-		station_blocked_tiles = _station_tiles,
-		towns = _towns.Save()
+		id = this._player_id,
+		karma_points = this._karma_points
 	};
+	data.rawset("road_blocked_tiles", this._road_blockade_tiles);
+	data.rawset("station_blocked_tiles", this._station_tiles);
+	data.rawset("towns", this._towns.Save());
+	AILog.Info("data len: " + data.len());
 	return data;
 }
 
 function Player::Load(data){
-	this._karma_points = data["karma_points"];
-	this._road_blocked_tile = data["road_blocked_tiles"];
-	this._station_tiles = data["station_blocked_tiles"];
-	if(data.rawin("towns")) this._towns.Load(data["towns"]);
-
-	return this;
+	local player = Player(data["id"]);
+	player._karma_points = data.rawget("karma_points");
+	if(data.rawin("road_blocked_tiles")) player._road_blockade_tiles = data.rawget("road_blocked_tiles");
+	if(data.rawin("station_blocked_tiles")) player._station_tiles = data.rawget("station_blocked_tiles");
+	if(data.rawin("towns")) player._towns = Towns.Load(data.rawget("towns"));
+	
+	return player;
 }
