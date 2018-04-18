@@ -238,18 +238,19 @@ function Player::Save(){
 	local townsList = this._towns.Save();
 	local data = {
 		id = this._player_id,
-		karma_points = this._karma_points
+		karma_points = this._karma_points,
+		quotient = this._quotient
 	};
 	data.rawset("road_blocked_tiles", this._road_blockade_tiles);
 	data.rawset("station_blocked_tiles", this._station_tiles);
 	data.rawset("towns", this._towns.Save());
-	AILog.Info("data len: " + data.len());
 	return data;
 }
 
 function Player::Load(data){
 	local player = Player(data["id"]);
 	player._karma_points = data.rawget("karma_points");
+	player._quotient = data.rawget("quotient");
 	if(data.rawin("road_blocked_tiles")) player._road_blockade_tiles = data.rawget("road_blocked_tiles");
 	if(data.rawin("station_blocked_tiles")) player._station_tiles = data.rawget("station_blocked_tiles");
 	if(data.rawin("towns")) player._towns = Towns.Load(data.rawget("towns"));
