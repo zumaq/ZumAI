@@ -310,7 +310,7 @@ function RoadBlockade::GetAroundBlockedTile(tile){
 	AILog.Info("statTile x: " + AIMap.GetTileX(startTile)+ " y: " + AIMap.GetTileY(startTile));
 	AILog.Info("endTile x: " + AIMap.GetTileX(endTile)+ " y: " + AIMap.GetTileY(endTile));
 	local path = RoadBlockade.FindBestPath(startTile, endTile);
-	RoadBlockade.BuildRoad(path);
+	if(path != false) RoadBlockade.BuildRoad(path);
 }
 
 function RoadBlockade::GetAroundBlockade(startTile, endTile){
@@ -370,20 +370,20 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
 
 	local pathfinder = MyRoadPF();
-	pathfinder._cost_level_crossing = 20;
-	pathfinder._cost_slope = 5;
+	pathfinder._cost_level_crossing = 10;
+	pathfinder._cost_slope = -10;
 	pathfinder._cost_tunnel_per_tile = 10;
-	pathfinder._max_bridge_length = 4;
-	pathfinder.cost.max_cost = 800;
+	pathfinder._max_bridge_length = 10;
+	pathfinder.cost.max_cost = 50;
 	pathfinder.cost.tile=10;
-	pathfinder.cost.no_existing_road=-70;
-	pathfinder.cost.turn=10;
-	pathfinder.cost.bridge_per_tile = -30;
+	pathfinder.cost.no_existing_road=-18;
+	pathfinder.cost.turn=0;
+	pathfinder.cost.bridge_per_tile = -10;
 
 	pathfinder.InitializePath([startTile], [endTile]);
 	local counter = 0;
 	local path = false;
-	while (path == false && counter < 150) {
+	while (path == false && counter < 4) {
 		path = pathfinder.FindPath(100);
 		counter++;
 		AIController.Sleep(1);
@@ -394,25 +394,15 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 		AILog.Warning("Pathfinding failed.");
 		return false;
 	}
-
-	if (path == null) {
-		AILog.Error("pathfinder.FindPath return null");
-		return false;
-	}
 	return path;
 }
 
 function RoadBlockade::Save(){
+	AILog.Info("Road Blockade save");
 	local data = {
-		available_trains = array(0),
-		blocking_trains = array(0)
+		available_trains = this._available_trains,
+		blocking_trains = this._blocking_trains
 	};
-	if(_available_trains.len() != 0){
-		data.available_trains = _available_trains;
-	}
-	if(_blocking_trains.len() != 0){
-		blocking_trains = _blocking_trains;
-	}
 	return data;
 }
 

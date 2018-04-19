@@ -307,7 +307,27 @@ class PlayerManager
       }
     }
 	}
+	
+	function CheckForRoadBlockadeFromSource(src, dest, vehicleTile){
+		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+		local pathfinder = RoadPathFinder();
+		pathfinder.cost.no_existing_road=200000;
+		pathfinder.InitializePath([src], [dest]);
 
+		local path = false;
+		while (path == false) {
+			path = pathfinder.FindPath(100);
+			AIController.Sleep(1);
+		}
+		if (path == null) {
+			/* No path was found. */
+			AILog.Error("pathfinder.FindPath return null");
+			return;
+		}
+		
+		return this.CheckForRoadBlockadeOnPath(path, vehicleTile)
+	}
+	
 	function CheckForRoadBlockadeOnPath(path, vehicleTile){
 		local array = this._roadBlockade.IsBlockadeOnPath(path);
 		if (array == false){
@@ -377,6 +397,7 @@ class PlayerManager
 
 	function Save(){
 		local playerList = array(0);
+		AILog.Info("Player Manager save");
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			playerList.push(this._player_list[i].Save());
 		}

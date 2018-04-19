@@ -235,15 +235,17 @@ function Player::IsStationTileSet(tile){
 }
 
 function Player::Save(){
+	AILog.Info("Player save");
 	local townsList = this._towns.Save();
 	local data = {
 		id = this._player_id,
-		karma_points = this._karma_points,
-		quotient = this._quotient
+		karma_points = this._karma_points.tointeger(),
+		quotient = this._quotient.tointeger()
 	};
+	//AILog.Info("quotient: " + data.quotient);
 	data.rawset("road_blocked_tiles", this._road_blockade_tiles);
 	data.rawset("station_blocked_tiles", this._station_tiles);
-	data.rawset("towns", this._towns.Save());
+	data.rawset("towns", townsList);
 	return data;
 }
 

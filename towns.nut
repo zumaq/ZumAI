@@ -703,6 +703,7 @@ function Towns::PrintTownRatings(){
 }
 
 function Towns::Save(){
+	AILog.Info("Towns save");
 	local data = {
 		road_blockade = this._roadBlockade.Save()
 	};

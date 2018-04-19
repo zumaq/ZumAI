@@ -176,7 +176,7 @@ function findAndBuildRoad(){
 		  while (AIRail.IsRailTile(endTile.GetTile())){
 			endTile = endTile.GetParent();
 		  }
-		  RoadBlockade.GetAroundBlockedTile(par.GetTile());
+		  //RoadBlockade.GetAroundBlockedTile(par.GetTile());
 		  //RoadBlockade.GetAroundBlockade(path.GetTile(), endTile.GetTile());
 		  }
 		}
@@ -274,7 +274,9 @@ function CheckVehicles(){
 	for(local i = 0; i<3; ++i){
 		local tile = this._players.CheckVehicleBlockade(vehicle[i]);
 		if (tile != null){
-			this._players.CheckForRoadBlockadeOnPath(_path, tile);
+			local src = AIMap.GetTileIndex(16, 49);
+			local dest = AIMap.GetTileIndex(19, 12);
+			this._players.CheckForRoadBlockadeFromSource(src, dest, tile);
 		}
 	}
 }
@@ -335,6 +337,7 @@ function ZumAI::Save()
   local table = {
 		player_manager = players
 	};
+  AILog.Info("Main save");
   return table;
 }
 
