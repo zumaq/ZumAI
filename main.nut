@@ -271,13 +271,22 @@ function CheckIndustry(){
 }
 
 function CheckVehicles(){
+	local tile = null;
 	for(local i = 0; i<3; ++i){
-		local tile = this._players.CheckVehicleBlockade(vehicle[i]);
-		if (tile != null){
-			local src = AIMap.GetTileIndex(16, 49);
-			local dest = AIMap.GetTileIndex(19, 12);
-			this._players.CheckForRoadBlockadeFromSource(src, dest, tile);
+		local tmpTile = this._players.CheckVehicleBlockade(vehicle[i]);
+		if (tmpTile != null){
+			tile = tmpTile;
+			for (local k=0; k<3; k++){
+				AIVehicle.ReverseVehicle(vehicle[k]);
+			}
+			AIController.Sleep(20);
+			break;
 		}
+	}
+	local src = AIMap.GetTileIndex(24, 14);
+	local dest = AIMap.GetTileIndex(27, 41);
+	if (tile != null){
+		this._players.CheckForRoadBlockadeFromSource(src, dest, tile);
 	}
 }
 
@@ -337,7 +346,7 @@ function ZumAI::Save()
   local table = {
 		player_manager = players
 	};
-  AILog.Info("Main save");
+  //AILog.Info("Main save");
   return table;
 }
 

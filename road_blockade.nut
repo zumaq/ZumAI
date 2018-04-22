@@ -223,7 +223,6 @@ function RoadBlockade::IsBlockadeOnPath(_path) {
 		if (par != null) {
 			if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1 ) {
 				if (AIRail.IsLevelCrossingTile(par.GetTile())) {
-					//TODO: punish with vehicles rather than by the tile that it is there, cuz you can punish yourselve.
 					AILog.Info("Road is and intersection, punish the creator" + AITile.GetOwner(path.GetTile()));
 					blockedTiles.push(par.GetTile());
 				}
@@ -286,6 +285,40 @@ function RoadBlockade::IsBlockadeInFrontOfDepo(depoTile){
 	return 0;
 }
 
+function RoadBlockade::GetAroundBlockedSwitchTile(tile){
+	local startTile = tile;
+	local endTile = tile;
+	//determines what way the road goes and sets start and end tile
+	if (AIRoad.IsRoadTile(tile + AIMap.GetTileIndex(-1,0))){
+		do {
+			startTile = startTile + AIMap.GetTileIndex(-1,0);
+		} while (AIRail.IsRailTile(startTile))
+		do {
+			endTile = endTile + AIMap.GetTileIndex(1,0);
+		} while (AIRail.IsRailTile(endTile))
+	}
+	else {
+		do {
+			startTile = startTile + AIMap.GetTileIndex(0,-1);
+		} while (AIRail.IsRailTile(startTile))
+		do {
+			endTile = endTile + AIMap.GetTileIndex(0,1);
+		} while (AIRail.IsRailTile(endTile))
+
+	}
+	local tmp = startTile;
+	startTile = endTile;
+	endTile = tmp;
+	AILog.Info("statTile x: " + AIMap.GetTileX(startTile)+ " y: " + AIMap.GetTileY(startTile));
+	AILog.Info("endTile x: " + AIMap.GetTileX(endTile)+ " y: " + AIMap.GetTileY(endTile));
+	local path = RoadBlockade.FindBestPath(startTile, endTile);
+	if(path != false){
+		return RoadBlockade.BuildRoad(path);
+	} else {
+		return false;
+	}
+}
+
 function RoadBlockade::GetAroundBlockedTile(tile){
 	local startTile = tile;
 	local endTile = tile;
@@ -310,7 +343,11 @@ function RoadBlockade::GetAroundBlockedTile(tile){
 	AILog.Info("statTile x: " + AIMap.GetTileX(startTile)+ " y: " + AIMap.GetTileY(startTile));
 	AILog.Info("endTile x: " + AIMap.GetTileX(endTile)+ " y: " + AIMap.GetTileY(endTile));
 	local path = RoadBlockade.FindBestPath(startTile, endTile);
-	if(path != false) RoadBlockade.BuildRoad(path);
+	if(path != false){
+		return RoadBlockade.BuildRoad(path);
+	} else {
+		return false;
+	}
 }
 
 function RoadBlockade::GetAroundBlockade(startTile, endTile){
@@ -338,7 +375,7 @@ function RoadBlockade::BuildBridge(startTile, endTile){
 	bridge_list.Valuate(AIBridge.GetMaxSpeed);
 	bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
 	if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), startTile, endTile)) {
-	  /* An error occured while building a bridge. TODO: handle it. */
+	
 	}
 }
 
@@ -357,6 +394,11 @@ function RoadBlockade::BuildRoad(roadPath){
 			if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1){
 				if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
 				  AILog.Info("Problem, cant build road, could be already built.");
+				  //if(AIError.GetLastError() == AIError.ERR_VEHICLE_IN_THE_WAY){
+						while(AIRoad.BuildRoad(path.GetTile(), par.GetTile())){
+							AILog.Info("building road, waiting for vehicle");
+						}
+				  //}
 				}
 			} else {
 				RoadBlockade.BuildBridge(path.GetTile(), par.GetTile());
@@ -376,7 +418,7 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 	pathfinder._max_bridge_length = 10;
 	pathfinder.cost.max_cost = 50;
 	pathfinder.cost.tile=10;
-	pathfinder.cost.no_existing_road=-18;
+	pathfinder.cost.no_existing_road=-20;
 	pathfinder.cost.turn=0;
 	pathfinder.cost.bridge_per_tile = -10;
 
@@ -398,7 +440,7 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 }
 
 function RoadBlockade::Save(){
-	AILog.Info("Road Blockade save");
+	//AILog.Info("Road Blockade save");
 	local data = {
 		available_trains = this._available_trains,
 		blocking_trains = this._blocking_trains

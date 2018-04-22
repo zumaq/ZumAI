@@ -80,7 +80,8 @@ class PlayerManager
 				local tile = AIVehicle.GetLocation(vehicleID);
 				AILog.Info("VEHICLE RUNNING BUT STOPPED, THERE IS A BLOCKADE AROUND x: "
 						   + AIMap.GetTileX(tile) + " y: " + AIMap.GetTileY(tile));
-				AIVehicle.ReverseVehicle(vehicleID);
+				//AIVehicle.ReverseVehicle(vehicleID);
+				//AIController.Sleep(25);
 				return tile;
 			}
 			return null;
@@ -135,6 +136,9 @@ class PlayerManager
 	}
 
 	function CheckIfArrayContainsTile(tileArray, tile){
+		if (tile == null){
+			return null;
+		}
 		local candidateTiles = array(0);
 		candidateTiles.push(tile + AIMap.GetTileIndex(0, 1));
 		candidateTiles.push(tile + AIMap.GetTileIndex(1, 0));
@@ -298,14 +302,31 @@ class PlayerManager
 	function CheckForOtherTownStations(stationTile){
 		//add them to array and punish by that
 		local stationTiles = this.FindOtherBusStops(stationTile);
-    for (local i=0; i<stationTiles.len(); i++){
-      local owner = AITile.GetOwner(stationTiles[i]);
-      if (this._player_list[owner].IsStationTileSet(stationTiles[i]) == false){
-        this.CheckTileAndOwner(owner, stationTiles[i]);
-        this._player_list[owner]._station_tiles.push(stationTiles[i]);
-        AILog.Info("Added tile to list " + stationTiles[i] + " owner: " + owner);
-      }
-    }
+		for (local i=0; i<stationTiles.len(); i++){
+		  local owner = AITile.GetOwner(stationTiles[i]);
+		  if (this._player_list[owner].IsStationTileSet(stationTiles[i]) == false){
+			this.CheckTileAndOwner(owner, stationTiles[i]);
+			this._player_list[owner]._station_tiles.push(stationTiles[i]);
+			AILog.Info("Added tile to list " + stationTiles[i] + " owner: " + owner);
+		  }
+		}
+	}
+	
+	function NormalPathfinder(src, dest){
+		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+		local pathfinder = RoadPathFinder();
+		pathfinder.InitializePath([src], [dest]);
+
+		local path = false;
+		while (path == false) {
+			path = pathfinder.FindPath(100);
+			AIController.Sleep(1);
+		}
+		if (path == null) {
+			return null;
+		}
+		
+		return path;
 	}
 	
 	function CheckForRoadBlockadeFromSource(src, dest, vehicleTile){
@@ -315,17 +336,57 @@ class PlayerManager
 		pathfinder.InitializePath([src], [dest]);
 
 		local path = false;
-		while (path == false) {
+		local counter = 0;
+		while (path == false || counter < 4) {
 			path = pathfinder.FindPath(100);
 			AIController.Sleep(1);
 		}
 		if (path == null) {
 			/* No path was found. */
-			AILog.Error("pathfinder.FindPath return null");
+			AILog.Error("pathfinder.FindPath return null, probably there is removed tile");
+			//this.PunishRemovedTownTiles(this.NormalPathfinder(src, dest));
 			return;
 		}
 		
 		return this.CheckForRoadBlockadeOnPath(path, vehicleTile)
+	}
+	
+	function PunishRemovedTownTiles(_path){
+		if (_path == null) {
+			AILog.Error("path is null");
+			return false;
+		}
+		local path = _path;
+		local k = 0
+		while (path != null) {
+			local par = path.GetParent();
+			if (par != null) {
+				k++;
+			}
+			path = par;
+		}
+		
+		AILog.Info("PunishRemovedTownTiles k: " + k);
+		path = _path
+		local i = 0;
+		while (path != null) {
+			local par = path.GetParent();
+			if (par != null) {
+				AILog.Info("i: " + i);
+				if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1 ) {
+					if ((i<10 || i>(k-10)) && AIRail.IsRailTile(path.GetTile()) && !AIRoad.IsRoadTile(path.GetTile())) {
+						if (this._player_list[owner].IsRoadBlockedTileSet(path.GetTile()) == false){
+							this.AddKarmaPoints(owner, -30);
+							this._player_list[owner]._road_blockade_tiles.push(path.GetTile());
+							AILog.Info("Added Blocked Town Tile to list " + path.GetTile() + " owner: " + owner);
+							this._roadBlockade.GetAroundBlockedTile(path.GetTile());
+						}
+					}
+				}
+				i++;
+			}
+			path = par;
+		}
 	}
 	
 	function CheckForRoadBlockadeOnPath(path, vehicleTile){
@@ -334,8 +395,9 @@ class PlayerManager
 			AILog.Info("There is no blockade");
 			return false;
 		}
+		
 		local blockadeTile = this.CheckIfArrayContainsTile(array, vehicleTile)
-		if (blockadeTile == false){
+		if (blockadeTile == false || blockadeTile == null){
 			AILog.Info("There is no blockade on that Tile, false alarm");
 			return false;
 		}
@@ -352,6 +414,11 @@ class PlayerManager
 			this._player_list[owner]._road_blockade_tiles.push(blockadeTile);
 			AILog.Info("Added tile to list " + blockadeTile + " owner: " + owner);
 			this._roadBlockade.GetAroundBlockedTile(blockadeTile);
+		} else {
+			if (AIController.GetTick() % 2 != 0 || this._roadBlockade.GetAroundBlockedSwitchTile(blockadeTile) == false){
+			} else {
+				this._roadBlockade.GetAroundBlockedTile(blockadeTile);
+			}
 		}
 	}
 
@@ -397,7 +464,7 @@ class PlayerManager
 
 	function Save(){
 		local playerList = array(0);
-		AILog.Info("Player Manager save");
+		//AILog.Info("Player Manager save");
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			playerList.push(this._player_list[i].Save());
 		}

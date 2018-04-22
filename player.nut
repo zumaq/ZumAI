@@ -235,7 +235,7 @@ function Player::IsStationTileSet(tile){
 }
 
 function Player::Save(){
-	AILog.Info("Player save");
+	//AILog.Info("Player save");
 	local townsList = this._towns.Save();
 	local data = {
 		id = this._player_id,
