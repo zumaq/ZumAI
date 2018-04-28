@@ -299,7 +299,125 @@ class PlayerManager
       }
   }
 
-	function CheckForOtherTownStations(stationTile){
+	function CalculateInfluance(tile){
+		local townID = AITile.GetTownAuthority(tile);
+		local location = AITown.GetLocation(townID);
+		local tmpTile = location;
+		local distance = 0;
+		while(AITown.IsWithinTownInfluence(townID, tmpTile)){
+			tmpTile = tmpTile + AIMap.GetTileIndex(0, 1);
+			distance++;
+		}
+		return distance;
+	}
+
+	function IsDemolishedTile(candidateTile){
+		if (AIRail.IsRailTile(candidateTile) && !AIRoad.IsRoadTile(candidateTile)
+				&& !AICompany.IsMine(AITile.GetOwner(candidateTile))){
+			local x_tile1 = candidateTile + AIMap.GetTileIndex(-1,0);
+			local x_tile2 = candidateTile + AIMap.GetTileIndex(1,0);
+			local y_tile1 = candidateTile + AIMap.GetTileIndex(0,-1);
+			local y_tile2 = candidateTile + AIMap.GetTileIndex(0,1);
+			local tiles = [candidateTile + AIMap.GetTileIndex(-1,0), candidateTile + AIMap.GetTileIndex(1,0),
+											candidateTile + AIMap.GetTileIndex(0,-1), candidateTile + AIMap.GetTileIndex(0,1)];
+			local count_roads = 0;
+			local count_rails = 0;
+			AILog.Info("test outside");
+			for(local i=0; i<tiles.len(); i++){
+				AILog.Info("test" + i);
+				if(AIRoad.IsRoadTile(tiles[i])){
+					count_roads++;
+				}
+				if(AIRail.IsRailTile(tiles[i])){
+					count_rail++;
+				}
+			}
+			if((count_rails + count_roads) >= 2 ){
+				local owner = AITile.GetOwner(candidateTile);
+				if (this._player_list[owner].IsRoadBlockedTileSet(candidateTile) == false){
+					this.AddKarmaPoints(owner, -30);
+					this._player_list[owner]._road_blockade_tiles.push(candidateTile);
+					AILog.Info("Added Blocked Town Tile to list " + candidateTile + " owner: " + owner);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	function FindRemovedTownTiles(locationTile, distance_max){
+		local tile = AITown.GetLocation(AITile.GetTownAuthority(locationTile));
+		local found_tile = false;
+		for (local distance=1 ; distance <=distance_max; distance++) {
+			local candidateTile = tile + AIMap.GetTileIndex(-distance,-distance);
+			local moves = distance * 2;
+			for (local l = 0; l < 4; l++){
+				for (local i = 0; i < moves; i++){
+					//AILog.Info("CheckOtherStation cycle: " + i +
+					//			"tile x: " + AIMap.GetTileX(candidateTile) + "tile y: " + AIMap.GetTileY(candidateTile));
+					if (this.IsDemolishedTile(candidateTile)){
+						found_tile = true;
+					}
+					if(l == 0){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,1);
+					}
+					if(l == 1){
+						candidateTile = candidateTile + AIMap.GetTileIndex(1,0);
+					}
+					if(l == 2){
+						candidateTile = candidateTile + AIMap.GetTileIndex(0,-1);
+					}
+					if(l == 3){
+						candidateTile = candidateTile + AIMap.GetTileIndex(-1,0);
+					}
+				}
+			}
+		}
+		return found_tile;
+	}
+
+	function BuildNewPath(start, end){
+		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
+		local pathfinder = RoadPathFinder();
+		pathfinder.cost.no_existing_road=100;
+		pathfinder.InitializePath([start], [end]);
+
+		local path = false;
+		while (path == false) {
+			path = pathfinder.FindPath(100);
+			AIController.Sleep(1);
+		}
+		if (path == null) {
+			return null;
+		}
+
+		while (path != null) {
+	  local par = path.GetParent();
+		  if (par != null) {
+		    if (AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) == 1 ) {
+		      if (!AIRoad.BuildRoad(path.GetTile(), par.GetTile())) {
+		      }
+		    } else {
+		      if (!AIBridge.IsBridgeTile(path.GetTile()) && !AITunnel.IsTunnelTile(path.GetTile())) {
+		        if (AIRoad.IsRoadTile(path.GetTile())) AITile.DemolishTile(path.GetTile());
+		        if (AITunnel.GetOtherTunnelEnd(path.GetTile()) == par.GetTile()) {
+		          if (!AITunnel.BuildTunnel(AIVehicle.VT_ROAD, path.GetTile())) {
+		          }
+		        } else {
+		          local bridge_list = AIBridgeList_Length(AIMap.DistanceManhattan(path.GetTile(), par.GetTile()) + 1);
+		          bridge_list.Valuate(AIBridge.GetMaxSpeed);
+		          bridge_list.Sort(AIList.SORT_BY_VALUE, false);
+		          if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), path.GetTile(), par.GetTile())) {
+		          }
+		        }
+		      }
+		    }
+		  }
+		  path = par;
+		}
+	}
+
+	function CheckForOtherTownStations(stationTile, endStationTile){
 		//add them to array and punish by that
 		local stationTiles = this.FindOtherBusStops(stationTile);
 		for (local i=0; i<stationTiles.len(); i++){
@@ -310,11 +428,31 @@ class PlayerManager
 			AILog.Info("Added tile to list " + stationTiles[i] + " owner: " + owner);
 		  }
 		}
+
+		local endStationTiles = this.FindOtherBusStops(endStationTile);
+		for (local i=0; i<endStationTiles.len(); i++){
+		  local owner = AITile.GetOwner(endStationTiles[i]);
+		  if (this._player_list[owner].IsStationTileSet(endStationTiles[i]) == false){
+			this.CheckTileAndOwner(owner, endStationTiles[i]);
+			this._player_list[owner]._station_tiles.push(endStationTiles[i]);
+			AILog.Info("Added tile to list " + endStationTiles[i] + " owner: " + owner);
+		  }
+		}
+
+		local firstDistance = this.CalculateInfluance(stationTile);
+		local secondDistance = this.CalculateInfluance(stationTile);
+		local firstStation_Path = this.FindRemovedTownTiles(stationTile, firstDistance);
+		local secondStation_Path = this.FindRemovedTownTiles(endStationTile, secondDistance);
+		if (firstStation_Path || secondStation_Path){
+			this.BuildNewPath(stationTile, endStationTile);
+		}
 	}
-	
-	function NormalPathfinder(src, dest){
+
+
+	function OriginalPathfinder(src, dest){
 		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
 		local pathfinder = RoadPathFinder();
+		pathfinder.cost.no_existing_road=2000;
 		pathfinder.InitializePath([src], [dest]);
 
 		local path = false;
@@ -325,32 +463,15 @@ class PlayerManager
 		if (path == null) {
 			return null;
 		}
-		
+
 		return path;
 	}
-	
-	function CheckForRoadBlockadeFromSource(src, dest, vehicleTile){
-		AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
-		local pathfinder = RoadPathFinder();
-		pathfinder.cost.no_existing_road=200000;
-		pathfinder.InitializePath([src], [dest]);
 
-		local path = false;
-		local counter = 0;
-		while (path == false || counter < 4) {
-			path = pathfinder.FindPath(100);
-			AIController.Sleep(1);
-		}
-		if (path == null) {
-			/* No path was found. */
-			AILog.Error("pathfinder.FindPath return null, probably there is removed tile");
-			//this.PunishRemovedTownTiles(this.NormalPathfinder(src, dest));
-			return;
-		}
-		
+	function CheckForRoadBlockadeFromSource(src, dest, vehicleTile){
+		local path = this.OriginalPathfinder(src, dest);
 		return this.CheckForRoadBlockadeOnPath(path, vehicleTile)
 	}
-	
+
 	function PunishRemovedTownTiles(_path){
 		if (_path == null) {
 			AILog.Error("path is null");
@@ -365,7 +486,7 @@ class PlayerManager
 			}
 			path = par;
 		}
-		
+
 		AILog.Info("PunishRemovedTownTiles k: " + k);
 		path = _path
 		local i = 0;
@@ -388,14 +509,14 @@ class PlayerManager
 			path = par;
 		}
 	}
-	
+
 	function CheckForRoadBlockadeOnPath(path, vehicleTile){
 		local array = this._roadBlockade.IsBlockadeOnPath(path);
 		if (array == false){
 			AILog.Info("There is no blockade");
 			return false;
 		}
-		
+
 		local blockadeTile = this.CheckIfArrayContainsTile(array, vehicleTile)
 		if (blockadeTile == false || blockadeTile == null){
 			AILog.Info("There is no blockade on that Tile, false alarm");
@@ -452,7 +573,7 @@ class PlayerManager
 			}
 		}
 	}
-	
+
 	function PrintStations(){
 		for(local i = 0; i < MAX_PLAYERS; i++) {
 			AILog.Info("Player with id: " + this._player_list[i]._player_id + ". ");

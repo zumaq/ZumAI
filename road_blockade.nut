@@ -375,7 +375,7 @@ function RoadBlockade::BuildBridge(startTile, endTile){
 	bridge_list.Valuate(AIBridge.GetMaxSpeed);
 	bridge_list.Sort(AIAbstractList.SORT_BY_VALUE, false);
 	if (!AIBridge.BuildBridge(AIVehicle.VT_ROAD, bridge_list.Begin(), startTile, endTile)) {
-	
+
 	}
 }
 
@@ -412,15 +412,17 @@ function RoadBlockade::FindBestPath(startTile, endTile){
 	AIRoad.SetCurrentRoadType(AIRoad.ROADTYPE_ROAD);
 
 	local pathfinder = MyRoadPF();
-	pathfinder._cost_level_crossing = 10;
-	pathfinder._cost_slope = -10;
-	pathfinder._cost_tunnel_per_tile = 10;
-	pathfinder._max_bridge_length = 10;
+
+	pathfinder._cost_level_crossing = 0xFFFFFF;
+  /*
+	pathfinder.cost.slope = -10;
+	pathfinder.cost.max_bridge_length = 10;
 	pathfinder.cost.max_cost = 50;
 	pathfinder.cost.tile=10;
 	pathfinder.cost.no_existing_road=-20;
 	pathfinder.cost.turn=0;
-	pathfinder.cost.bridge_per_tile = -10;
+  */
+	//pathfinder.cost.bridge_per_tile = 10;
 
 	pathfinder.InitializePath([startTile], [endTile]);
 	local counter = 0;
@@ -452,6 +454,6 @@ function RoadBlockade::Load(data){
 	local blockade = RoadBlockade();
 	blockade._available_trains = data.available_trains;
 	blockade._blocking_trains = data.blocking_trains;
-	
+
 	return blockade;
 }

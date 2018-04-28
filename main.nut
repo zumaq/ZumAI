@@ -41,9 +41,11 @@ function ZumAI::Start()
 	//		AIIndustry.GetDistanceSquareToTile(AIIndustry.GetIndustryID(AIMap.GetTileIndex(41,33)), AIMap.GetTileIndex(39,35)));
 
 	//if (this.GetTick() % 200 == 0) CheckIndustry();
-	//if (this.GetTick() % 200 == 0) CheckBusStops();
+	if (this.GetTick() % 200 == 0) CheckBusStops();
     //if (this.GetTick() % 500 == 0) _players.CheckForDestroyedStationTiles();
-	if (this.GetTick() % 10 == 0) CheckVehicles();
+	//if (this.GetTick() % 10 == 0) CheckVehicles();
+  //if (this.GetTick() % 100 == 0) AILog.Info("town: " + AITown.GetName(1) + " is in town influance: "
+  //                                + AITown.IsWithinTownInfluence(1, AIMap.GetTileIndex(38,20)));
 	//if (this.GetTick() % 100 == 0) _players.PrintStations();
 	//if(this.GetTick() % 200 == 0) _players.CheckForDestroyedBlockades();
     //if(this.GetTick() % 450 == 0) _players.PrintPoints();
@@ -77,7 +79,7 @@ function ZumAI::Start()
 
 	//AILog.Warning(AIError.GetLastErrorString());
 	if(AIError.GetLastError() == AIError.ERR_VEHICLE_IN_THE_WAY){
-		AILog.Info("Vehicle in the way!!");
+		//AILog.Info("Vehicle in the way!!");
 	}
   }
 }
@@ -245,10 +247,11 @@ function BuildVehicles(number){
 }
 
 function CheckBusStops(){
-	local tile = AIMap.GetTileIndex(21,44);
-	local stationID = AIStation.GetStationID(tile);
+	local tile_1 = AIMap.GetTileIndex(40,26);
+  local tile_2 = AIMap.GetTileIndex(16,45);
+	local stationID = AIStation.GetStationID(tile_1);
 	AILog.Info("checking station" + stationID);
-	_players.CheckForOtherTownStations(tile)
+	_players.CheckForOtherTownStations(tile_1, tile_2);
 	/*if (AIStation.HasStationType(stationID, AIStation.STATION_BUS_STOP)){ // cant check this because its not mine station
 		AILog.Info("Has STation TYpe");
 		_players.CheckForOtherTownStations(tile)
@@ -271,20 +274,25 @@ function CheckIndustry(){
 }
 
 function CheckVehicles(){
+  //local src = AIMap.GetTileIndex(33, 48);
+	//local dest = AIMap.GetTileIndex(45, 19);
+  //this._players.CheckForRoadBlockadeFromSource(src, dest, tile);
 	local tile = null;
 	for(local i = 0; i<3; ++i){
 		local tmpTile = this._players.CheckVehicleBlockade(vehicle[i]);
 		if (tmpTile != null){
 			tile = tmpTile;
 			for (local k=0; k<3; k++){
-				AIVehicle.ReverseVehicle(vehicle[k]);
+        if(AIVehicle.GetLocation(vehicle[k]) == tmpTile){
+				      AIVehicle.ReverseVehicle(vehicle[k]);
+              this.Sleep(5);
+        }
 			}
-			AIController.Sleep(20);
-			break;
+      break;
 		}
 	}
-	local src = AIMap.GetTileIndex(24, 14);
-	local dest = AIMap.GetTileIndex(27, 41);
+	local src = AIMap.GetTileIndex(33, 48);
+	local dest = AIMap.GetTileIndex(45, 19);
 	if (tile != null){
 		this._players.CheckForRoadBlockadeFromSource(src, dest, tile);
 	}

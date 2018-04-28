@@ -23,7 +23,10 @@ function MyRoadPF::InitializePath(sources, goals)
 function MyRoadPF::_Cost(self, path, new_tile, new_direction)
 {
 	local cost = ::RoadPathFinder._Cost(self, path, new_tile, new_direction);
-	if (AITile.HasTransportType(new_tile, AITile.TRANSPORT_RAIL)) cost += self._cost_level_crossing;
+	if (AITile.HasTransportType(new_tile, AITile.TRANSPORT_RAIL)){
+		 AILog.Warning("crossing on tile: " + new_tile);
+		 cost += self._cost_level_crossing;
+		}
 	return cost;
 }
 
@@ -72,4 +75,3 @@ function MyRailPF::_Cost(path, new_tile, new_direction, self)
 	if (AITile.HasTransportType(new_tile, AITile.TRANSPORT_ROAD)) cost += self._cost_level_crossing;
 	return cost;
 }
-
